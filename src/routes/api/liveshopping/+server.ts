@@ -47,7 +47,7 @@ const GRAPHQL_BODY = [{
 const BODY_CONTENT = JSON.stringify(GRAPHQL_BODY)
 
 
-export const load = () => {
+export function GET() {
   return fetch(DIGITEC_FETCH_URL, {
     method: "POST",
     headers: HEADERS,
@@ -55,7 +55,7 @@ export const load = () => {
   })
     .then(response => response.json())
     .then(data => {
-      return { data };
+        return new Response(JSON.stringify(data[0].data.socialShopping))
     })
     .catch(error => {
       console.error(error)
