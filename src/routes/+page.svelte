@@ -6,18 +6,22 @@
 	 */
     let live_feed_entries = [];
 
-    onMount(async () => {
+    const fetchSocialShopping = async () => {
         let response = await fetch('/api/liveshopping');
         let socialShopping = await response.json();
-        live_feed_entries = [live_feed_entries, ...socialShopping.items];
+        live_feed_entries = [...live_feed_entries, ...socialShopping.items]
+        console.log(live_feed_entries.length);
+    }
+
+    onMount(() => {
+        fetchSocialShopping();
+        setInterval(fetchSocialShopping, 30000);
     });
-
-
     
 </script>
 
 <div class="h-screen flex justify-center items-center">
-    <div class="border-2 border-sky-200 rounded-lg p-2">
+    <div class="max-h-screen border-2 border-sky-200 rounded-lg p-2">
         <div class="flex justify-center p-2 my-2">
             <h1 class="text-2xl font-semibold">Live feed</h1>
         </div>
