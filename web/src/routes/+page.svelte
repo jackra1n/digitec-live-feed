@@ -31,10 +31,13 @@
 </script>
 
 <div class="max-h-screen flex justify-center my-4">
-    <div class="w-4/5 max-w-screen-md border-2 bg-sky-50 border-sky-200 rounded-lg p-2">
-        <div class="flex flex-col items-center p-2 my-2">
-            <h1 class="text-2xl font-semibold">Live feed</h1>
-            <p>Refresh in: {countdown}</p>
+    <div class="w-4/5 max-w-screen-md bg-surface-600 rounded-lg p-2">
+        <div class="flex items-center p-2 my-2">
+            <div class="w-full flex flex-col items-center">
+                <h1 class="text-2xl font-semibold">Live feed</h1>
+                <p>Refresh in: {countdown}</p>
+            </div>
+            <button type="button" class="btn variant-filled-secondary">Pause Fetching</button>
         </div>
         <div class="overflow-y-auto flex flex-col items-center">
             {#each liveFeedEntries as item}

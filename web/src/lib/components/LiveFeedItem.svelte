@@ -3,7 +3,7 @@
     export let item = {};
 </script>
 
-<div class="flex justify-between w-11/12 border-2 border-sky-200 p-2 mt-2 rounded-md bg-sky-200">
+<div class="flex justify-between w-11/12 p-2 mt-2 rounded-md bg-surface-800 hover:bg-surface-900">
 
     <div class="flex">
     {#if item.socialShoppingTransactionTypeId == 1}
@@ -50,5 +50,5 @@
     {/if}
     </div>
 
-    <p>{new Date(item.dateTime).toLocaleTimeString()}</p>
+    <p class="px-2 bg-secondary-600 rounded-full">{new Date(item.dateTime).toLocaleTimeString()}</p>
 </div>
