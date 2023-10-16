@@ -11,8 +11,8 @@
     const fetchSocialShopping = async () => {
         let response = await fetch('/api/liveshopping');
         let socialShopping = await response.json();
-        live_feed_entries = [...socialShopping.items, ...live_feed_entries]
-        console.log(live_feed_entries.length);
+        console.log(socialShopping);
+        live_feed_entries = live_feed_entries.concat(socialShopping.items.reverse());
     }
 
     const updateCountdown = () => {
