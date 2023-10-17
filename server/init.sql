@@ -1,10 +1,10 @@
 -- Create the database
-CREATE DATABASE TransactionsFeed;
+CREATE DATABASE LiveFeed;
 
 CREATE TABLE users (
     id SERIAL PRIMARY KEY,
     username VARCHAR(255),
-    city_name VARCHAR(255),
+    city_name VARCHAR(255)
 );
 
 CREATE TABLE products (
