@@ -7,7 +7,8 @@
   },
   "dependencies": {
     "croner": "^7.0.3",
-    "elysia": "latest"
+    "elysia": "latest",
+    "postgres": "^3.4.0"
   },
   "devDependencies": {
     "bun-types": "latest"

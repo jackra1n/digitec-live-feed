@@ -1,8 +1,13 @@
 import { Elysia } from "elysia";
 import { Cron } from "croner";
+import { fetchFeedItems } from "./fetch";
+import postgres from "postgres";
 
-const fetchJob = Cron("*/30 * * * * *", () => {
-  console.log("fetching data");
+
+const sql = postgres(process.env.DATABASE_URL);
+
+const fetchJob = Cron("*/30 * * * * *", async () => {
+    let items = await fetchFeedItems();
 });
 
 const app = new Elysia().get("/", () => "Hello Elysia").listen(3000);
