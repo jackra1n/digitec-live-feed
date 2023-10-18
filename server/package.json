@@ -8,7 +8,7 @@
   "dependencies": {
     "@prisma/client": "^5.4.2",
     "croner": "^7.0.3",
-    "elysia": "latest",
+    "hono": "^3.8.1",
     "prisma": "^5.4.2"
   },
   "devDependencies": {

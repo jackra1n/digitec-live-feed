@@ -13,7 +13,7 @@ This project was created mainly so I could learn how to use [Svelte](https://sve
 
 ### Backend
 - [Bun](https://bun.sh/)
-- [Elysia](https://elysiajs.com/)
+- [Hono](https://hono.dev/)
 - [Prisma](https://www.prisma.io/)
 - [PostgreSQL](https://www.postgresql.org/)
 
