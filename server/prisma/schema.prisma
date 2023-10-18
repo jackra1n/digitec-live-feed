@@ -10,66 +10,21 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id        Int      @id @default(autoincrement())
-  username  String
-  cityName  String
-  transactions Transaction[]
-  votes      Vote[]
-}
-
-model Product {
-  id               Int      @id @default(autoincrement())
-  brandName        String
-  fullProductName  String
-  transactions     Transaction[]
-}
-
-model TransactionType {
-  id       Int     @id @default(autoincrement())
-  typeName String
-  transactions Transaction[]
-}
-
-model Price {
-  id                 Int      @id @default(autoincrement())
-  amountIncludingTax Decimal
-  amountExcludingTax Decimal
-  currency           String
-  transactions       Transaction[]
-}
-
-model VoteType {
-  id       Int     @id @default(autoincrement())
-  typeName String
-  votes    Vote[]
-}
-
-model Transaction {
-  id                 Int       @id
-  transactionTimestamp DateTime
-  transactionTypeId  Int
-  transactionType     TransactionType @relation(fields: [transactionTypeId], references: [id])
-  productId           Int
-  product             Product         @relation(fields: [productId], references: [id])
-  userId              Int
-  user                User            @relation(fields: [userId], references: [id])
-  priceId             Int
-  price               Price           @relation(fields: [priceId], references: [id])
-  rating              Int?
-  searchString        String
+model SocialShoppingItem {
+  id                  Int   @id
+  username            String
+  city                String
+  date                DateTime
   imageUrl            String?
+  brand               String?
+  product             String?
+  oAuthProviderName   String?
+  targetUsername      String?
   quote               String?
-  url                 String?
-  votes               Vote[]
-}
-
-model Vote {
-  id           Int      @id @default(autoincrement())
-  voteTypeId    Int
-  voteType      VoteType  @relation(fields: [voteTypeId], references: [id])
-  userId       Int
-  user         User      @relation(fields: [userId], references: [id])
-  transactionId Int
-  transaction   Transaction @relation(fields: [transactionId], references: [id])
+  voteTypeId          Int?
+  productTypeName     String?
+  socialShoppingTransactionTypeId Int
+  url                 String
+  rating              Decimal?
+  searchString        String?
 }
