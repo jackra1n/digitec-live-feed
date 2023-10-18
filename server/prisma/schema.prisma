@@ -11,20 +11,30 @@ datasource db {
 }
 
 model SocialShoppingItem {
-  id                  Int   @id
-  username            String
-  city                String
-  date                DateTime
-  imageUrl            String?
-  brand               String?
-  product             String?
-  oAuthProviderName   String?
-  targetUsername      String?
-  quote               String?
-  voteTypeId          Int?
-  productTypeName     String?
+  id                              Int           @id
+  userName                        String
+  cityName                        String
+  dateTime                        DateTime
+  imageUrl                        String?
+  brandName                       String?
+  fullProductName                 String?
+  displayPrice                    DisplayPrice?
+  oAuthProviderName               String?
+  targetUserName                  String?
+  quote                           String?
+  voteTypeId                      Int?
+  productTypeName                 String?
   socialShoppingTransactionTypeId Int
-  url                 String
-  rating              Decimal?
-  searchString        String?
+  url                             String
+  rating                          Int?
+  searchString                    String?
+}
+
+model DisplayPrice {
+  id                   Int                @id @default(autoincrement())
+  socialShoppingItem   SocialShoppingItem @relation(fields: [socialShoppingItemId], references: [id])
+  socialShoppingItemId Int                @unique
+  amountInclusive      Decimal
+  amountExclusive      Decimal
+  currency             String
 }

@@ -55,5 +55,5 @@ export const fetchFeedItems = async () => {
 
   const data = await response.json()
 
-  return data[0].data.socialShopping;
+  return data[0].data.socialShopping.items;
 }
