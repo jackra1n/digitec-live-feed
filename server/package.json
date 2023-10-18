@@ -9,7 +9,6 @@
     "@prisma/client": "^5.4.2",
     "croner": "^7.0.3",
     "elysia": "latest",
-    "postgres": "^3.4.0",
     "prisma": "^5.4.2"
   },
   "devDependencies": {
