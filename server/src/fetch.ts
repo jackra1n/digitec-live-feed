@@ -21,11 +21,10 @@ const GRAPHQL_BODY = [{
             imageUrl
             brandName
             fullProductName
-            salesPrice {
-              amountIncl
-              amountExcl
+            displayPrice {
+              amountInclusive
+              amountExclusive
               currency
-              __typename
             }
             oAuthProviderName
             targetUserName
@@ -36,9 +35,7 @@ const GRAPHQL_BODY = [{
             url
             rating
             searchString
-            __typename
           }
-          __typename
         }
       }`,
   variables: { "take": 6, "latest": null }

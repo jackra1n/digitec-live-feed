@@ -13,7 +13,7 @@ datasource db {
 model SocialShoppingItem {
   id                              Int           @id
   userName                        String
-  cityName                        String
+  cityName                        String?
   dateTime                        DateTime
   imageUrl                        String?
   brandName                       String?

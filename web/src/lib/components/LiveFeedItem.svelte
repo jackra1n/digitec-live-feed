@@ -40,8 +40,8 @@
         <p>{item.fullProductName}</p>
         {/if}
         
-        {#if item.salesPrice != null}
-        <p>CHF {item.salesPrice.amountIncl}</p>
+        {#if item.displayPrice != null}
+        <p>CHF {item.displayPrice.amountIncl}</p>
         {/if}
     </div>
 
