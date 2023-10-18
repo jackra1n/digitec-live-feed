@@ -2,7 +2,7 @@
 CREATE TABLE "SocialShoppingItem" (
     "id" INTEGER NOT NULL,
     "userName" TEXT NOT NULL,
-    "cityName" TEXT NOT NULL,
+    "cityName" TEXT,
     "dateTime" TIMESTAMP(3) NOT NULL,
     "imageUrl" TEXT,
     "brandName" TEXT,

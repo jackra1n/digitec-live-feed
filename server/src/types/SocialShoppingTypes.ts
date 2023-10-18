@@ -11,7 +11,7 @@ export enum SocialShoppingType {
     Like = 19
 }
 
-export interface DisplayPrice {
+export interface DigitecDisplayPrice {
     amountInclusive: number;
     amountExclusive: number;
     currency: string;
@@ -19,6 +19,20 @@ export interface DisplayPrice {
 
 export interface DigitecSocialShoppingItem {
     id: string;
-    displayPrice: DisplayPrice | null;
+    userName: string;
+    cityName: string | null;
     dateTime: string;
+    imageUrl: string | null;
+    brandName: string | null;
+    fullProductName: string | null;
+    displayPrice: DigitecDisplayPrice | null;
+    oAuthProviderName: string | null;
+    targetUserName: string | null;
+    quote: string | null;
+    voteTypeId: number | null;
+    productTypeName: string | null;
+    socialShoppingTransactionTypeId: number;
+    url: string;
+    rating: number | null;
+    searchString: string | null;
 }
