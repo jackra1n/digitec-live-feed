@@ -1,19 +1,27 @@
-import { Hono } from "hono";
-import { Cron } from "croner";
-import { PrismaClient, SocialShoppingItem } from "@prisma/client";
-import { fetchFeedItems } from "./fetch";
-import { convertDisplayPrices, convertSocialShoppingItems } from "./convertToPrisma";
+import { Hono } from 'hono';
+import { Cron } from 'croner';
+import { PrismaClient } from '@prisma/client';
+import { fetchFeedItems } from './fetch';
+import { convertDisplayPrices, convertSocialShoppingItems } from './convertToPrisma';
+import { prettyJSON } from 'hono/pretty-json';
 
 
 const prisma = new PrismaClient();
 const app = new Hono();
 
+app.use('*', prettyJSON());
 app.get('/', (c) => c.text('Hello Hono!'));
-app.get('/api/hello', (c) => {
-  return c.json({
-    ok: true,
-    message: 'Hello Hono!',
-  })
+app.get('/api/v1/live-feed/', async (c) => {
+  const items = await prisma.socialShoppingItem.findMany({
+    include: {
+      displayPrice: true,
+    },
+    take: 6,
+    orderBy: {
+      dateTime: 'desc',
+    },
+  });
+  return c.json(items);
 });
 
 const fetchJob = Cron("*/30 * * * * *", async () => {
@@ -33,7 +41,7 @@ const fetchJob = Cron("*/30 * * * * *", async () => {
         skipDuplicates: true,
       });
     } catch (error) {
-      console.error("Error saving to database: ", error);
+      console.error('Error saving to database: ', error);
     }
 });
 

@@ -1,4 +1,4 @@
-import { DigitecSocialShoppingItem, DigitecDisplayPrice } from "./types/SocialShoppingTypes";
+import { DigitecSocialShoppingItem, DigitecDisplayPrice } from './types/SocialShoppingTypes';
 
 export const convertSocialShoppingItems = (items: DigitecSocialShoppingItem[]) => {
   return items.map((item: DigitecSocialShoppingItem) => {

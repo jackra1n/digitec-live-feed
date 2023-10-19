@@ -1,15 +1,15 @@
 
-const DIGITEC_FETCH_URL = "https://www.digitec.ch/api/graphql/get-social-shoppings"
+const DIGITEC_FETCH_URL = 'https://www.digitec.ch/api/graphql/get-social-shoppings';
 
 const HEADERS = {
-  "Accept": "*/*",
-  "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36",
-  "Content-Type": "application/json",
-  "Origin": "https://www.digitec.ch"
-}
+  'Accept': '*/*',
+  'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36',
+  'Content-Type': 'application/json',
+  'Origin': 'https://www.digitec.ch'
+};
 
 const GRAPHQL_BODY = [{
-  operationName: "GET_SOCIAL_SHOPPINGS",
+  operationName: 'GET_SOCIAL_SHOPPINGS',
   query: `query GET_SOCIAL_SHOPPINGS($take: Int, $latest: String) {
         socialShopping(take: $take, latest: $latest) {
           latestTransactionTimeStamp
@@ -38,14 +38,14 @@ const GRAPHQL_BODY = [{
           }
         }
       }`,
-  variables: { "take": 6, "latest": null }
-}]
+  variables: { 'take': 6, 'latest': null }
+}];
 
-const BODY_CONTENT = JSON.stringify(GRAPHQL_BODY)
+const BODY_CONTENT = JSON.stringify(GRAPHQL_BODY);
 
 export const fetchFeedItems = async () => {
   const response = await fetch(DIGITEC_FETCH_URL, {
-    method: "POST",
+    method: 'POST',
     headers: HEADERS,
     body: BODY_CONTENT
   })
@@ -53,4 +53,4 @@ export const fetchFeedItems = async () => {
   const data = await response.json()
 
   return data[0].data.socialShopping.items;
-}
+};
