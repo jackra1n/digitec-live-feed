@@ -1,18 +1,19 @@
 {
-  "name": "server",
-  "version": "1.0.50",
+  "name": "digitec-live-feed-server",
+  "version": "1.0.0",
+  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "bun run --watch src/index.ts"
+    "start": "tsx src/index.ts"
   },
   "dependencies": {
+    "@hono/node-server": "^1.2.0",
     "@prisma/client": "^5.4.2",
     "croner": "^7.0.3",
-    "hono": "^3.8.1",
-    "prisma": "^5.4.2"
+    "hono": "^3.8.1"
   },
   "devDependencies": {
-    "bun-types": "latest"
-  },
-  "module": "src/index.js"
+    "prisma": "^5.4.2",
+    "tsx": "^3.12.2",
+    "typescript": "^5.2.2"
+  }
 }

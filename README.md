@@ -12,7 +12,7 @@ This project was created mainly so I could learn how to use [Svelte](https://sve
 
 
 ### Backend
-- [Bun](https://bun.sh/)
+- [Node.js](https://nodejs.org/en/)
 - [Hono](https://hono.dev/)
 - [Prisma](https://www.prisma.io/)
 - [PostgreSQL](https://www.postgresql.org/)

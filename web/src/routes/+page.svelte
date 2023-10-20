@@ -31,7 +31,7 @@
 </script>
 
 <div class="max-h-screen flex justify-center my-4">
-    <div class="w-4/5 max-w-screen-md bg-surface-600 rounded-lg p-2">
+    <div class="w-4/5 max-w-screen-md bg-sky-300 rounded-lg p-2">
         <div class="flex items-center p-2 my-2">
             <div class="w-full flex flex-col items-center">
                 <h1 class="text-2xl font-semibold">Live feed</h1>
