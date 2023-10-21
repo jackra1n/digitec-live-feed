@@ -36,15 +36,15 @@ const fetchJob = Cron("*/30 * * * * *", async () => {
     try {
         await prisma.socialShoppingItem.createMany({
             data: socialShoppingItems,
-            skipDuplicates: true,
+            skipDuplicates: true
         });
-      
+    
         await prisma.displayPrice.createMany({
             data: displayPrices,
-            skipDuplicates: true,
+            skipDuplicates: true
         });
     } catch (error) {
-        console.error('Error saving to database: ', error);
+        console.error(`Error saving to database: ${error}`);
     }
 });
 

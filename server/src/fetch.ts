@@ -43,14 +43,36 @@ const GRAPHQL_BODY = [{
 
 const BODY_CONTENT = JSON.stringify(GRAPHQL_BODY);
 
+let lastFetchedItemIds = [];
+
+
 export const fetchFeedItems = async () => {
   const response = await fetch(DIGITEC_FETCH_URL, {
     method: 'POST',
     headers: HEADERS,
     body: BODY_CONTENT
-  })
+  });
 
-  const data = await response.json()
+  if (!response.ok) {
+    throw new Error(`Failed to fetch feed items: ${response}`);
+  }
 
-  return data[0].data.socialShopping.items;
+  const data = await response.json();
+  const currentItems = data[0].data.socialShopping.items;
+
+  const currentItemIds = currentItems.map(generateItemIdentifier);
+  const newIds = currentItemIds.filter((id) => !lastFetchedItemIds.includes(id));
+
+  const newItems = currentItems.filter((item) => {
+    const itemIdentifier = generateItemIdentifier(item);
+    return newIds.includes(itemIdentifier);
+  });
+
+  lastFetchedItemIds = currentItemIds;
+  return newItems;
 };
+
+
+function generateItemIdentifier(item) {
+  return `${item.userName}_${item.dateTime}_${item.socialShoppingTransactionTypeId}_${item.url}`;
+}
