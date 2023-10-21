@@ -1,69 +1,33 @@
 <script>
-// @ts-nocheck
+    // @ts-nocheck
     export let item = {};
 </script>
 
-<div class="flex justify-between w-11/12 p-2 mt-2 rounded-md bg-surface-800 hover:bg-surface-900">
-
-    <div class="flex">
-    {#if item.socialShoppingTransactionTypeId == 1}
-
-    <img src={item.imageUrl} alt={item.fullProductName} class="w-16 h-16 p-1 rounded-md mr-4 object-contain bg-white"/>
-    <div>
-        <p><strong>{item.userName}</strong> rated </p>
-        <p>{item.brandName} {item.fullProductName}</p>
-    </div>
-
-    {:else if item.socialShoppingTransactionTypeId == 2}
-
-    <p>{item.userName} from {item.cityName} registered as a new user</p>
-
-    {:else if [3, 4].includes(item.socialShoppingTransactionTypeId)}
-
-    <img src={item.imageUrl} alt={item.fullProductName} class="w-16 h-16 p-1 rounded-md mr-4 object-contain bg-white"/>
-    <div>
-        <p>
-            <strong>{item.userName}</strong> 
-            {#if item.cityName != null}
-                from <strong>{item.cityName}</strong> 
-            {/if} 
-
-            {#if item.socialShoppingTransactionTypeId == 3}
-                ordered
-            {:else}
-                picked up
-            {/if}
+<div class="flex h-full w-full items-start justify-between rounded-md border-[1px] border-[transparent] bg-white mt-2 px-3 py-[20px] transition-all duration-150 hover:border-blue-700 hover:shadow-blue-600 hover:shadow-md">    
+    <div class="flex items-center gap-3">
+        <div class="flex h-16 w-16 items-center justify-center">
+        <img
+            class="h-full w-full rounded-xl object-contain"
+            src="{item.imageUrl}"
+            alt="{item.brandName} {item.fullProductName}"
+        />
+        </div>
+        <div class="flex flex-col">
+        <h5 class="text-base font-bold text-navy-700">
+            { item.brandName } { item.fullProductName }
+        </h5>
+        <p class="mt-1 text-sm font-normal text-gray-600">
+            { item.userName }
         </p>
-        {#if item.brandName != null}
-        <p>{item.brandName} {item.fullProductName}</p>
-        {:else}
-        <p>{item.fullProductName}</p>
-        {/if}
-        
-        {#if item.displayPrice != null}
-        <p>CHF {item.displayPrice.amountIncl}</p>
-        {/if}
+        </div>
+    </div> 
+    <div class="mt-1 flex items-center justify-center text-navy-700">
+        <div class="ml-1 flex items-center text-sm font-bold text-navy-700">
+        <p>   </p>
+        { item.displayPrice.amountInclusive }<p class="ml-1">{ item.displayPrice.currency }</p>
+        </div>
+        <div class="ml-2 flex items-center text-sm font-normal text-gray-600">
+        <p>{new Date(item.dateTime).toLocaleTimeString()}</p>
+        </div>
     </div>
-
-    {:else if item.socialShoppingTransactionTypeId == 5}
-
-    <img src={item.imageUrl} alt={item.fullProductName} class="w-16 h-16 p-1 rounded-md mr-4 object-contain bg-white">
-    <div>
-        <p>{item.brandName} {item.fullProductName}</p>
-        <p><strong>was shipped to</strong> {item.userName}</p>
-    </div>
-
-    {:else if item.socialShoppingTransactionTypeId == 19}
-
-    <p>{item.userName} rated {item.brandName} {item.fullProductName} with {item.rating} stars</p>
-
-    {:else}
-
-    <p>Unknown transaction type: {item.socialShoppingTransactionTypeId}</p>
-
-        
-    {/if}
-    </div>
-
-    <p class="px-2 bg-secondary-600 rounded-full">{new Date(item.dateTime).toLocaleTimeString()}</p>
 </div>
