@@ -28,6 +28,7 @@ model SocialShoppingItem {
   url                             String
   rating                          Int?
   searchString                    String?
+  @@unique([userName, dateTime, socialShoppingTransactionTypeId, url])
 }
 
 model DisplayPrice {
