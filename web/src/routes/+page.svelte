@@ -35,7 +35,7 @@
 </script>
 
 <div class="flex flex-col justify-center items-center h-[100vh] pt-4">
-    <div class="relative overflow-hidden flex flex-col items-center max-h-[660px] rounded-[10px] border-[1px] border-gray-200 w-[576px] mx-auto p-4 bg-white bg-clip-border shadow-md shadow-blue-600 ">
+    <div class="relative overflow-scroll flex flex-col items-center max-h-[660px] rounded-[10px] border-[1px] border-gray-200 w-4/5 max-w-3xl mx-auto p-4 bg-white bg-clip-border shadow-md shadow-blue-600 ">
         <div class="flex items-center justify-between rounded-t-3xl p-3 w-full">
             <div class="text-lg font-bold text-navy-700">
                 Live Feed
