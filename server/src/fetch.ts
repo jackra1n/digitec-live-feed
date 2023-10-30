@@ -68,7 +68,7 @@ export const fetchFeedItems = async () => {
     return newIds.includes(itemIdentifier);
   });
 
-  lastFetchedItemIds = currentItemIds;
+  lastFetchedItemIds = [...newIds, ...lastFetchedItemIds].slice(0, 50);
   return newItems;
 };
 
