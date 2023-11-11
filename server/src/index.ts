@@ -28,7 +28,12 @@ app.get('/api/v1/live-feed/', async (c) => {
 });
 
 const fetchJob = Cron("*/30 * * * * *", async () => {
-    let items = await fetchFeedItems();
+    let items = [];
+    try {
+        items = await fetchFeedItems();
+    } catch (error) {
+        console.error(`Error fetching feed items: ${error}`);
+    }
 
     const socialShoppingItems = convertSocialShoppingItems(items);
     const displayPrices = convertDisplayPrices(items);
