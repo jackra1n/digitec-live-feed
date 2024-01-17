@@ -53,6 +53,9 @@ const fetchJob = Cron("*/30 * * * * *", async () => {
     }
 });
 
-serve(app);
+serve({
+    fetch: app.fetch,
+    port: 4794,
+})
 
 console.log('Server started!');
