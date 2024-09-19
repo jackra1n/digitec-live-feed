@@ -14,7 +14,7 @@
         console.log(socialShopping);
         
         socialShopping = socialShopping.filter(filterDuplicateItems);
-        liveFeedEntries = socialShopping.concat(liveFeedEntries);
+        liveFeedEntries = socialShopping.concat(liveFeedEntries).slice(0, 50);
     }
 
     // @ts-ignore

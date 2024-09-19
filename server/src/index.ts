@@ -1,5 +1,6 @@
 import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
+import { cors } from 'hono/cors';
 import { Cron } from 'croner';
 import { prettyJSON } from 'hono/pretty-json';
 import { PrismaClient } from '@prisma/client';
@@ -14,6 +15,7 @@ const app = new Hono();
 
 app.use('*', prettyJSON());
 app.get('/', (c) => c.text('Hello Hono!'));
+app.get('/api/v1/*', cors());
 app.get('/api/v1/live-feed/', async (c) => {
     const items = await prisma.socialShoppingItem.findMany({
         include: {
