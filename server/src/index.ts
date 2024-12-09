@@ -1,4 +1,3 @@
-import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
 import { Cron } from 'croner';
 import { prettyJSON } from 'hono/pretty-json';
@@ -27,7 +26,7 @@ app.get('/api/v1/live-feed/', async (c) => {
     return c.json(items);
 });
 
-const fetchJob = Cron("*/30 * * * * *", async () => {
+const fetchJob = new Cron("*/30 * * * * *", async () => {
     let items = [];
     try {
         items = await fetchFeedItems();
@@ -53,9 +52,9 @@ const fetchJob = Cron("*/30 * * * * *", async () => {
     }
 });
 
-serve({
-    fetch: app.fetch,
-    port: 4794,
-})
+export default { 
+    port: 4794, 
+    fetch: app.fetch, 
+}
 
 console.log('Server started!');

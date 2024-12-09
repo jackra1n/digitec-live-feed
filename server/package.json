@@ -6,14 +6,13 @@
     "start": "tsx src/index.ts"
   },
   "dependencies": {
-    "@hono/node-server": "^1.2.0",
-    "@prisma/client": "^5.4.2",
-    "croner": "^7.0.3",
-    "hono": "^3.8.1"
+    "@prisma/client": "^6.0.1",
+    "croner": "^9.0.0",
+    "hono": "^4.6.13"
   },
   "devDependencies": {
-    "prisma": "^5.4.2",
-    "tsx": "^3.12.2",
-    "typescript": "^5.2.2"
+    "prisma": "^6.0.1",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
   }
 }
