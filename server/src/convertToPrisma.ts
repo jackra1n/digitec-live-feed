@@ -1,12 +1,8 @@
-import { DigitecSocialShoppingItem, DigitecDisplayPrice } from './types/SocialShoppingTypes';
+import { DigitecSocialShoppingItem, DigitecDisplayPrice } from './types/SocialShoppingTypes.js';
 
 export const convertSocialShoppingItems = (items: DigitecSocialShoppingItem[]) => {
   return items.map((item: DigitecSocialShoppingItem) => {
-    const {
-      id,
-      displayPrice,
-      ...socialShoppingItem
-    } = item;
+    const { id, displayPrice, ...socialShoppingItem } = item;
 
     const newItem = {
       id: parseInt(id),

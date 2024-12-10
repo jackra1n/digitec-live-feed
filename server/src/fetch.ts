@@ -3,9 +3,10 @@ const DIGITEC_FETCH_URL = 'https://www.digitec.ch/api/graphql/get-social-shoppin
 
 const HEADERS = {
 	'Accept': '*/*',
-	'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36',
+	'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.6 Safari/605.1.1',
 	'Content-Type': 'application/json',
-	'Origin': 'https://www.digitec.ch'
+	'Origin': 'https://www.digitec.ch',
+	'Referer': 'https://www.digitec.ch/'
 };
 
 const GRAPHQL_BODY = [{
@@ -54,8 +55,9 @@ export const fetchFeedItems = async () => {
 	});
 
 	if (!response.ok) {
-		throw new Error(`Failed to fetch feed items: ${response.status} ${response.statusText}`);
-	}
+    const errorText = await response.text();
+    throw new Error(`Failed to fetch feed items: ${response.status} ${response.statusText}. Response: ${errorText}`);
+  }
 
 	const data = await response.json();
 	const currentItems = data[0].data.socialShopping.items;

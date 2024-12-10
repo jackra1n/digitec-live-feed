@@ -12,18 +12,25 @@ const prisma = new PrismaClient();
 const app = new Hono();
 
 app.use('*', prettyJSON());
+
 app.get('/', (c) => c.text('Hello Hono!'));
+
 app.get('/api/v1/live-feed/', async (c) => {
-    const items = await prisma.socialShoppingItem.findMany({
-        include: {
-            displayPrice: true,
-        },
-        take: 6,
-        orderBy: {
-            dateTime: 'desc',
-        },
-    });
-    return c.json(items);
+    try {
+        const items = await prisma.socialShoppingItem.findMany({
+            include: {
+                displayPrice: true,
+            },
+            take: 6,
+            orderBy: {
+                dateTime: 'desc',
+            },
+        });
+        return c.json(items);
+    } catch (error) {
+        console.error(`Error fetching live feed: ${error}`);
+        return c.json({ error: 'Error fetching live feed' }, 500);
+    }
 });
 
 const fetchJob = new Cron("*/30 * * * * *", async () => {
