@@ -1,6 +1,11 @@
-<script>
-    // @ts-nocheck
-    export let item = {};
+<script lang="ts">
+    
+    interface Props {
+        // @ts-nocheck
+        item?: any;
+    }
+
+    let { item = {} }: Props = $props();
 </script>
 
 <div class="flex h-full w-full items-start justify-between rounded-md border-[1px] border-[transparent] bg-white mt-2 px-3 py-[20px] transition-all duration-150 hover:border-blue-700 hover:shadow-blue-600 hover:shadow-md">    

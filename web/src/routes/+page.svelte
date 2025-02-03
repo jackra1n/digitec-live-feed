@@ -6,7 +6,7 @@
     /**
 	 * @type {any[]}
 	 */
-    let liveFeedEntries = [];
+    let liveFeedEntries = $state([]);
 
     const fetchSocialShopping = async () => {
         let response = await fetch(PUBLIC_BACKEND_URL + '/api/v1/live-feed/');
