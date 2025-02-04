@@ -10,11 +10,10 @@ This project was created mainly so I could learn how to use [Svelte](https://sve
 - [SvelteKit](https://kit.svelte.dev/)
 - [Tailwind CSS](https://tailwindcss.com/)
 
-
 ### Backend
-- [Node.js](https://nodejs.org/en/)
+- [Bun](https://bun.sh/)
 - [Hono](https://hono.dev/)
-- [Prisma](https://www.prisma.io/)
+- [drizzle-orm](https://orm.drizzle.team/)
 - [PostgreSQL](https://www.postgresql.org/)
 
 
