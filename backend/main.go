@@ -62,7 +62,27 @@ type GraphQLResponse struct {
 	} `json:"data"`
 }
 
-func fetchItems() []LiveFeedEntry {
+type LiveFeedItemsCache struct {
+	items   []LiveFeedEntry
+	maxSize int
+}
+
+func NewLiveFeedItemsCache(size int) *LiveFeedItemsCache {
+	return &LiveFeedItemsCache{items: make([]LiveFeedEntry, 0, size), maxSize: size}
+}
+
+func (cache *LiveFeedItemsCache) Add(item LiveFeedEntry) {
+	if len(cache.items) >= cache.maxSize {
+		cache.items = cache.items[1:]
+	}
+	cache.items = append(cache.items, item)
+}
+
+func (cache *LiveFeedItemsCache) GetItems() []LiveFeedEntry {
+	return cache.items
+}
+
+func FetchItems() []LiveFeedEntry {
 	graphqlBody := GraphQLRequest{
 		OperationName: "GET_SOCIAL_SHOPPINGS",
 		Query: `query GET_SOCIAL_SHOPPINGS($take: Int, $latest: String) {
@@ -170,11 +190,8 @@ func saveItemsToDB(pool *pgxpool.Pool, items []LiveFeedEntry) {
 	br := conn.SendBatch(context.Background(), batch)
 	defer br.Close()
 
-	for i := 0; i < len(items)*2; i++ {
-		_, err := br.Exec()
-		if err != nil {
-			log.Printf("Error executing batch: %v", err)
-		}
+	if err := br.Close(); err != nil {
+		log.Printf("Error executing batch: %v", err)
 	}
 }
 
@@ -182,12 +199,11 @@ func main() {
 	dbpool, err := pgxpool.New(context.Background(), os.Getenv("DATABASE_URL"))
 	if err != nil {
 		log.Fatal("Error connecting to database:", err)
-		os.Exit(1)
 	}
 	defer dbpool.Close()
 
 	var items []LiveFeedEntry
-	items = fetchItems()
+	items = FetchItems()
 
 	// save items to database
 
