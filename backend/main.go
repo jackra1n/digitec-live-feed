@@ -78,6 +78,22 @@ func (cache *LiveFeedItemsCache) Add(item LiveFeedEntry) {
 	cache.items = append(cache.items, item)
 }
 
+func filterNewItems(items []LiveFeedEntry, existingItems []LiveFeedEntry) []LiveFeedEntry {
+	existingIDs := make(map[string]bool)
+	for _, item := range existingItems {
+		existingIDs[item.ID] = true
+	}
+
+	var newItems []LiveFeedEntry
+	for _, item := range items {
+		if !existingIDs[item.ID] {
+			newItems = append(newItems, item)
+		}
+	}
+
+	return newItems
+}
+
 func (cache *LiveFeedItemsCache) GetItems() []LiveFeedEntry {
 	return cache.items
 }
@@ -202,9 +218,13 @@ func main() {
 	}
 	defer dbpool.Close()
 
-	var items []LiveFeedEntry
-	items = FetchItems()
+	itemsCache := *NewLiveFeedItemsCache(50)
 
-	// save items to database
+	fetchedItems := FetchItems()
+	newItems := filterNewItems(fetchedItems, itemsCache.items)
+
+	for _, newItem := range newItems {
+		itemsCache.Add(newItem)
+	}
 
 }
