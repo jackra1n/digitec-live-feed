@@ -1,9 +1,10 @@
 mod fetch;
+use fetch::fetch_feed_items;
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let items = fetch::fetch_items().await?;
-    println!("{:?}", items);
-
-    Ok(())
+fn main() {
+    
+    match fetch_feed_items() {
+        Ok(items) => println!("Found {} items: {:#?}", items.len(), items),
+        Err(e) => eprintln!("Request failed: {}", e),
+    }
 }
