@@ -72,10 +72,13 @@ pub async fn fetch_items() -> Result<Response, Error> {
         },
     }];
 
+    let body_json = serde_json::to_string_pretty(&request_body).unwrap();
+    println!("Request Body:\n{}", body_json);
+
     let client = reqwest::Client::new();
     let resp = client.post(DIGITEC_FETCH_URL)
-        .json(&request_body)
         .headers(headers)
+        .body(body_json)
         .send()
         .await?;
 
