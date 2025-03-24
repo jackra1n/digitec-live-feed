@@ -2,7 +2,8 @@ mod fetch;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    fetch::fetch_items().await?;
+    let items = fetch::fetch_items().await?;
+    println!("{:?}", items);
 
     Ok(())
 }
