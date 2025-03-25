@@ -9,8 +9,8 @@ const USER_AGENT: &str = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleW
 struct GraphQLRequest {
     #[serde(rename = "operationName")]
     operation_name: &'static str,
-    query: &'static str,
     variables: Variables,
+    query: &'static str,
 }
 
 #[derive(Serialize, Debug)]
@@ -52,21 +52,22 @@ const GRAPHQL_QUERY: &str = r#"query GET_SOCIAL_SHOPPINGS($take: Int, $latest: S
 pub fn fetch_feed_items() -> Result<Vec<FeedItem>, Error> {
     let request = GraphQLRequest {
         operation_name: "GET_SOCIAL_SHOPPINGS",
-        query: GRAPHQL_QUERY,
         variables: Variables {
             take: 6,
             latest: None,
         },
+        query: GRAPHQL_QUERY,
     };
 
     println!("Request: {:#?}", request);
 
     let raw_response = ureq::post(DIGITEC_URL)
-        .header("Accept", "*/*")
-        .header("User-Agent", USER_AGENT) 
-        .header("Content-Type", "application/json")
-        .header("Origin", "https://www.digitec.ch")
-        .header("Referer", "https://www.digitec.ch/")
+        .header("accept", "*/*")
+        .header("user-agent", USER_AGENT) 
+        .header("content-type", "application/json")
+        .header("origin", "https://www.digitec.ch")
+        .header("referer", "https://www.digitec.ch/en/daily-deal")
+        .header("sec-fetch-mode", "cors")
         .send_json(&[request])?
         .body_mut()
         .read_to_string()?;
