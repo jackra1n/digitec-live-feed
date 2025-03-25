@@ -49,12 +49,12 @@ const GRAPHQL_QUERY: &str = r#"query GET_SOCIAL_SHOPPINGS($take: Int, $latest: S
 }"#;
 
 
-pub fn fetch_feed_items(take: i32) -> Result<Vec<FeedItem>, Error> {
+pub fn fetch_feed_items() -> Result<Vec<FeedItem>, Error> {
     let request = GraphQLRequest {
         operation_name: "GET_SOCIAL_SHOPPINGS",
         query: GRAPHQL_QUERY,
         variables: Variables {
-            take,
+            take: 6,
             latest: None,
         },
     };
