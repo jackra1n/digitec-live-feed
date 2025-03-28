@@ -4,11 +4,65 @@ We can send a POST request with some headers to get a response:
 ```sh
 curl 'https://www.digitec.ch/api/graphql/get-social-shoppings' \
   -H 'accept: */*' \
-  -H 'user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36' \
   -H 'content-type: application/json' \
   -H 'origin: https://www.digitec.ch' \
+  -H 'user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36' \
   --data-raw '[{"operationName":"GET_SOCIAL_SHOPPINGS","variables":{"take":6,"latest":null},"query":"query GET_SOCIAL_SHOPPINGS($take: Int, $latest: String) {\n  socialShopping(take: $take, latest: $latest) {\n    latestTransactionTimeStamp\n    items {\n      ...SocialShoppingItem\n      __typename\n    }\n    __typename\n  }\n}\n\nfragment SocialShoppingItem on SocialShoppingItem {\n  id\n  userName\n  cityName\n  dateTime\n  imageUrl\n  brandName\n  fullProductName\n  displayPrice {\n    amountInclusive\n    amountExclusive\n    currency\n    __typename\n  }\n  oAuthProviderName\n  targetUserName\n  quote\n  voteTypeId\n  productTypeName\n  socialShoppingTransactionTypeId\n  url\n  rating\n  searchString\n  __typename\n}"}]'
 ```
+
+Seems like at 25.03.2025 the above no longer work. When copying the request from browser dev tools as "fetch" the following is returned at this time:
+
+```js
+fetch("https://www.digitec.ch/api/graphql/get-social-shoppings", {
+  "headers": {
+    "accept": "*/*",
+    "accept-language": "en-US,en;q=0.8",
+    "content-type": "application/json",
+    "priority": "u=1, i",
+    "sec-ch-ua": "\"Chromium\";v=\"134\", \"Not:A-Brand\";v=\"24\", \"Brave\";v=\"134\"",
+    "sec-ch-ua-arch": "\"x86\"",
+    "sec-ch-ua-bitness": "\"64\"",
+    "sec-ch-ua-full-version-list": "\"Chromium\";v=\"134.0.0.0\", \"Not:A-Brand\";v=\"24.0.0.0\", \"Brave\";v=\"134.0.0.0\"",
+    "sec-ch-ua-mobile": "?0",
+    "sec-ch-ua-model": "\"\"",
+    "sec-ch-ua-platform": "\"Linux\"",
+    "sec-ch-ua-platform-version": "\"6.13.7\"",
+    "sec-ch-ua-wow64": "?0",
+    "sec-fetch-dest": "empty",
+    "sec-fetch-mode": "cors",
+    "sec-fetch-site": "same-origin",
+    "sec-gpc": "1",
+    "x-dg-correlation-id": "6a959dfd-91cd-4791-878e-c49bbbcefc10",
+    "x-dg-language": "en-US",
+    "x-dg-portal": "25",
+    "x-dg-routename": "/daily-deal",
+    "x-dg-routeowner": "clippy",
+    "x-dg-scrumteam": "Clippy",
+    "x-dg-team": "clippy",
+    "x-dg-xpid": "f8e36225"
+  },
+  "referrer": "https://www.digitec.ch/en/daily-deal",
+  "referrerPolicy": "strict-origin-when-cross-origin",
+  "body": "[{\"operationName\":\"GET_SOCIAL_SHOPPINGS\",\"variables\":{\"take\":6,\"latest\":null},\"query\":\"query GET_SOCIAL_SHOPPINGS($take: Int, $latest: String) {\\n  socialShopping(take: $take, latest: $latest) {\\n    latestTransactionTimeStamp\\n    items {\\n      ...SocialShoppingItem\\n      __typename\\n    }\\n    __typename\\n  }\\n}\\n\\nfragment SocialShoppingItem on SocialShoppingItem {\\n  id\\n  userName\\n  cityName\\n  dateTime\\n  imageUrl\\n  brandName\\n  fullProductName\\n  displayPrice {\\n    amountInclusive\\n    amountExclusive\\n    currency\\n    __typename\\n  }\\n  oAuthProviderName\\n  targetUserName\\n  quote\\n  voteTypeId\\n  productTypeName\\n  socialShoppingTransactionTypeId\\n  url\\n  rating\\n  searchString\\n  __typename\\n}\"}]",
+  "method": "POST",
+  "mode": "cors",
+  "credentials": "include"
+});
+```
+Additionally as curl:
+```sh
+curl 'https://www.digitec.ch/api/graphql/get-social-shoppings' \
+  -H 'accept: */*' \
+  -H 'content-type: application/json' \
+  -H 'origin: https://www.digitec.ch' \
+  -H 'referer: https://www.digitec.ch/en/daily-deal' \
+  -H 'sec-fetch-mode: cors' \
+  -H 'user-agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36' \
+  --data-raw '[{"operationName":"GET_SOCIAL_SHOPPINGS","variables":{"take":6,"latest":null},"query":"query GET_SOCIAL_SHOPPINGS($take: Int, $latest: String) {\n  socialShopping(take: $take, latest: $latest) {\n    latestTransactionTimeStamp\n    items {\n      ...SocialShoppingItem\n      __typename\n    }\n    __typename\n  }\n}\n\nfragment SocialShoppingItem on SocialShoppingItem {\n  id\n  userName\n  cityName\n  dateTime\n  imageUrl\n  brandName\n  fullProductName\n  displayPrice {\n    amountInclusive\n    amountExclusive\n    currency\n    __typename\n  }\n  oAuthProviderName\n  targetUserName\n  quote\n  voteTypeId\n  productTypeName\n  socialShoppingTransactionTypeId\n  url\n  rating\n  searchString\n  __typename\n}"}]'
+```
+After doing some tests it seems like the user-agent is outdated and the request fails with a 403 Forbidden error. The request works when using the latest user-agent string from Chrome.
+I also noticed that the `sec-fetch-mode` header is needed to be set to `cors` for the request to work.
+The header `referer` I think is not needed, but set it just in case.
 
 Example response:
 ```json
