@@ -1,10 +1,9 @@
 mod fetch;
-use fetch::fetch_feed_items_reqwest;
 mod types;
 
 #[tokio::main]
 async fn main() {
-    match fetch_feed_items_reqwest().await {
+    match fetch::fetch_feed_items_reqwest().await {
         Ok(items) => {
             println!("Fetched {} items.", items.len());
         }
