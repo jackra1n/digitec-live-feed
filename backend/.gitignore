@@ -12,3 +12,4 @@ target/
 
 # Custom
 .env
+live-feed.log

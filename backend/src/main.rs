@@ -5,19 +5,38 @@ use std::time::Duration;
 use feed_cache::FeedItemCache;
 use tokio::time::sleep;
 use simplelog::*;
+use clap::Parser;
 
 mod fetch;
 mod feed_cache;
 mod types;
 
+
+#[derive(Parser, Debug)]
+#[command(author, version, about, long_about = None)]
+struct Cli {
+    #[arg(short, long, action = clap::ArgAction::SetTrue)]
+    debug: bool,
+}
+
 #[tokio::main]
 async fn main() {
+    let cli = Cli::parse();
+
+    let log_level = if cli.debug {
+        LevelFilter::Debug
+    } else {
+        LevelFilter::Info
+    };
+
     CombinedLogger::init(
         vec![
-            TermLogger::new(LevelFilter::Info, Config::default(), TerminalMode::Mixed, ColorChoice::Auto),
+            TermLogger::new(log_level, Config::default(), TerminalMode::Mixed, ColorChoice::Auto),
             WriteLogger::new(LevelFilter::Info, Config::default(), std::fs::File::create("live-feed.log").unwrap()),
         ]
     ).unwrap();
+
+    debug!("Debug logging enabled");
 
     let mut cache = FeedItemCache::new(50);
     let fetch_interval = Duration::from_secs(30);
