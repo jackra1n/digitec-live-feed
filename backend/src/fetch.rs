@@ -75,7 +75,7 @@ pub async fn fetch_feed_items_reqwest() -> Result<Vec<FeedItem>, Error> {
     let headers = create_headers();
     let client = create_client(headers) 
         .map_err(|e| {
-            eprintln!("Error creating HTTP client: {:?}", e);
+            error!("Error creating HTTP client: {:?}", e);
             e
         })?;
 
@@ -93,11 +93,13 @@ pub async fn fetch_feed_items_reqwest() -> Result<Vec<FeedItem>, Error> {
     let response = response.error_for_status()?;
     let raw_body = response.text().await?;
 
+    trace!("Raw Response Body: {:?}", raw_body);
+
     let response_vec: Vec<GraphQLResponse> = match serde_json::from_str(&raw_body) {
         Ok(parsed) => parsed,
         Err(e) => {
-            eprintln!("JSON Parsing Error: {:?}", e);
-            eprintln!("Response Body: {:?}", raw_body);
+            warn!("JSON Parsing Error: {:?}", e);
+            warn!("Response Body: {:?}", raw_body);
             panic!("Failed to parse GraphQL JSON: {:?}", e);
         }
     };
