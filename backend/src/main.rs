@@ -8,11 +8,11 @@ async fn main() {
             println!("Fetched {} items.", items.len());
         }
         Err(e) => {
-            eprintln!("Request failed: {}", e);
+            eprintln!("Request failed: {:?}", e);
             if e.is_decode() {
                 eprintln!("Specific error was related to decoding the response body.");
             } else if let Some(status) = e.status() {
-                eprintln!("HTTP status error: {}", status);
+                eprintln!("HTTP status error: {:?}", status);
             }
         }
     }
