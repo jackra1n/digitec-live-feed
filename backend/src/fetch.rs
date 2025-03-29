@@ -1,7 +1,6 @@
 use serde::Serialize;
 use reqwest::header::{HeaderMap, ACCEPT, CONTENT_TYPE, ORIGIN, REFERER, ACCEPT_ENCODING, ACCEPT_LANGUAGE};
 use reqwest::Error;
-use http;
 use crate::types::{FeedItem, GraphQLResponse};
 
 const DIGITEC_URL: &str = "https://www.digitec.ch/api/graphql/get-social-shoppings";

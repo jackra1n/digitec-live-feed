@@ -1,13 +1,28 @@
 #![allow(dead_code)]
 use serde::Deserialize;
+use chrono::{DateTime, Utc};
+
+mod string_to_u32 {
+    use serde::{self, Deserialize, Deserializer};
+    use std::str::FromStr;
+
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<u32, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        u32::from_str(&s).map_err(serde::de::Error::custom)
+    }
+}
 
 #[derive(Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct FeedItem {
-    pub id: String,
+    #[serde(with = "string_to_u32")]
+    pub id: u32,
     pub user_name: String,
     pub city_name: Option<String>,
-    pub date_time: String,
+    pub date_time: DateTime<Utc>,
     pub image_url: Option<String>,
     pub brand_name: Option<String>,
     pub full_product_name: Option<String>,

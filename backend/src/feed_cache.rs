@@ -3,8 +3,8 @@ use crate::types::FeedItem;
 
 #[derive(Debug)]
 pub struct FeedItemCache {
-    seen_ids: HashSet<String>,
-    order: VecDeque<String>,
+    seen_ids: HashSet<u32>,
+    order: VecDeque<u32>,
     capacity: usize,
 }
 
