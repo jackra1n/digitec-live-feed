@@ -5,7 +5,7 @@ use http;
 use crate::types::{FeedItem, GraphQLResponse};
 
 const DIGITEC_URL: &str = "https://www.digitec.ch/api/graphql/get-social-shoppings";
-const USER_AGENT: &str = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.6 Safari/605.1.1";
+const USER_AGENT: &str = "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36";
 
 #[derive(Serialize, Debug, Clone)]
 struct GraphQLRequest {
@@ -50,26 +50,39 @@ const GRAPHQL_QUERY: &str = r#"query GET_SOCIAL_SHOPPINGS($take: Int, $latest: S
   }
 }"#;
 
-pub async fn fetch_feed_items_reqwest() -> Result<Vec<FeedItem>, Error> {
+fn create_headers() -> HeaderMap {
     let mut headers = HeaderMap::new();
     headers.insert(ACCEPT, "*/*".parse().unwrap());
     headers.insert(CONTENT_TYPE, "application/json".parse().unwrap());
     headers.insert(ORIGIN, "https://www.digitec.ch".parse().unwrap());
     headers.insert(REFERER, "https://www.digitec.ch/en/daily-deal".parse().unwrap());
     headers.insert("sec-fetch-mode", "cors".parse().unwrap());
+    // additional headers, not really needed
     headers.insert(ACCEPT_ENCODING, "gzip, deflate, br".parse().unwrap());
     headers.insert(ACCEPT_LANGUAGE, "en-US,en;q=0.9".parse().unwrap());
+    headers
+}
 
-    let client = reqwest::Client::builder()
+fn create_client(headers: HeaderMap) -> Result<reqwest::Client, reqwest::Error> {
+    return reqwest::Client::builder()
         .user_agent(USER_AGENT)
         .default_headers(headers)
         .use_rustls_tls() 
         .timeout(std::time::Duration::from_secs(10))
-        .build()?;
+        .build();
+}
+
+pub async fn fetch_feed_items_reqwest() -> Result<Vec<FeedItem>, Error> {
+    let headers = create_headers();
+    let client = create_client(headers) 
+        .map_err(|e| {
+            eprintln!("Error creating HTTP client: {:?}", e);
+            e
+        })?;
 
     let request_payload = GraphQLRequest {
         operation_name: "GET_SOCIAL_SHOPPINGS",
-        variables: Variables { take: 6, latest: None },
+        variables: Variables { take: 10, latest: None },
         query: GRAPHQL_QUERY,
     };
 
@@ -84,15 +97,9 @@ pub async fn fetch_feed_items_reqwest() -> Result<Vec<FeedItem>, Error> {
     let response_vec: Vec<GraphQLResponse> = match serde_json::from_str(&raw_body) {
         Ok(parsed) => parsed,
         Err(e) => {
-            eprintln!("JSON Parsing Error: {}", e);
-            eprintln!("Failed to parse the raw body shown above.");
-            let error_response = reqwest::Response::from(
-                http::Response::builder()
-                    .status(http::StatusCode::OK)
-                    .body(raw_body)
-                    .unwrap(),
-            );
-            return Err(error_response.json::<()>().await.unwrap_err());
+            eprintln!("JSON Parsing Error: {:?}", e);
+            eprintln!("Response Body: {:?}", raw_body);
+            panic!("Failed to parse GraphQL JSON: {:?}", e);
         }
     };
 

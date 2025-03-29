@@ -1,17 +1,16 @@
-#[warn(dead_code)]
-
+#![allow(dead_code)]
 use serde::Deserialize;
 
 #[derive(Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct FeedItem {
-    pub id: Option<String>,
-    pub user_name: Option<String>,
+    pub id: String,
+    pub user_name: String,
     pub city_name: Option<String>,
-    pub date_time: Option<String>,
+    pub date_time: String,
     pub image_url: Option<String>,
     pub brand_name: Option<String>,
-    pub full_product_name: String,
+    pub full_product_name: Option<String>,
     pub display_price: Option<DisplayPrice>,
     #[serde(rename = "oAuthProviderName")]
     pub o_auth_provider_name: Option<String>,
