@@ -15,6 +15,22 @@ mod string_to_u32 {
     }
 }
 
+mod trim_opt_string {
+    use serde::{self, Deserialize, Deserializer};
+
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<Option<String>, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let opt_s: Option<String> = Option::deserialize(deserializer)?;
+
+        match opt_s {
+            Some(s) => Ok(Some(s.trim_start().to_string())),
+            None => Ok(None),
+        }
+    }
+}
+
 #[derive(Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct FeedItem {
@@ -25,6 +41,7 @@ pub struct FeedItem {
     pub date_time: DateTime<Utc>,
     pub image_url: Option<String>,
     pub brand_name: Option<String>,
+    #[serde(with = "trim_opt_string")]
     pub full_product_name: Option<String>,
     pub display_price: Option<DisplayPrice>,
     #[serde(rename = "oAuthProviderName")]

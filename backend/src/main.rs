@@ -32,9 +32,10 @@ async fn main() {
                     if cache.add_and_check(&item) {
                         new_item_count += 1;
                         debug!(
-                            "  -> New Item: {:?} (ID: {:?})",
-                            item.full_product_name,
-                            item.id
+                            "  -> New Item: {:?} (ID: {:?}), Date: {:?}",
+                            item.full_product_name.as_deref().unwrap_or("N/A"),
+                            item.id,
+                            item.date_time,
                         );
                     }
                 }
