@@ -63,7 +63,7 @@ pub async fn fetch_feed_items_reqwest() -> Result<Vec<FeedItem>, Error> {
     let client = reqwest::Client::builder()
         .user_agent(USER_AGENT)
         .default_headers(headers)
-        .use_native_tls() // use system's native TLS
+        .use_rustls_tls() 
         .timeout(std::time::Duration::from_secs(10))
         .build()?;
 
