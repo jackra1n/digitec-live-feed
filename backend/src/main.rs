@@ -89,6 +89,8 @@ async fn main() {
 
     debug!("Debug logging enabled");
 
+    dotenvy::dotenv().ok();
+
     let db_pool = match create_db_pool().await {
         Ok(pool) => {
             info!("Database connection pool created successfully.");
