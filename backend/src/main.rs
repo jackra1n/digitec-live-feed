@@ -39,7 +39,6 @@ async fn run_fetch_loop(db_pool: PgPool) {
     let mut cache = FeedItemCache::new(50);
     let fetch_interval = Duration::from_secs(30);
 
-    info!("Starting item fetch loop...");
     loop {
         match fetch::fetch_feed_items().await {
             Ok(fetched_items) => {
@@ -51,7 +50,7 @@ async fn run_fetch_loop(db_pool: PgPool) {
                 if !new_items.is_empty() {
                     match db::insert_feed_items_batch(&db_pool, &new_items).await {
                         Ok(_) => {
-                            info!("Successfully inserted batch of {} items into the database.", new_items.len());
+                            debug!("Successfully inserted batch of {} items into the database.", new_items.len());
                         }
                         Err(e) => {
                             error!("Error inserting batch into the database: {}", e);
@@ -101,6 +100,6 @@ async fn main() {
         }
     };
 
-    info!("Fetching feed items...");
+    info!("Starting item fetch loop...");
     run_fetch_loop(db_pool.clone()).await;
 }
