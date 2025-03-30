@@ -63,15 +63,15 @@ fn create_headers() -> HeaderMap {
 }
 
 fn create_client(headers: HeaderMap) -> Result<reqwest::Client, reqwest::Error> {
-    return reqwest::Client::builder()
+    reqwest::Client::builder()
         .user_agent(USER_AGENT)
         .default_headers(headers)
         .use_rustls_tls() 
         .timeout(std::time::Duration::from_secs(10))
-        .build();
+        .build()
 }
 
-pub async fn fetch_feed_items_reqwest() -> Result<Vec<FeedItem>, Error> {
+pub async fn fetch_feed_items() -> Result<Vec<FeedItem>, Error> {
     let headers = create_headers();
     let client = create_client(headers) 
         .map_err(|e| {

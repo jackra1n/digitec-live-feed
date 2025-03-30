@@ -2,21 +2,73 @@
 extern crate simplelog;
 
 use std::time::Duration;
-use feed_cache::FeedItemCache;
+use sqlx::postgres::PgPoolOptions;
+use sqlx::{PgPool, Error};
 use tokio::time::sleep;
 use simplelog::*;
 use clap::Parser;
 
 mod fetch;
+mod db;
 mod feed_cache;
 mod types;
 
+use feed_cache::FeedItemCache;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Cli {
     #[arg(short, long, action = clap::ArgAction::SetTrue)]
     debug: bool,
+}
+
+async fn create_db_pool() -> Result<PgPool, Error> {
+    let db_url = std::env::var("DATABASE_URL")
+    .unwrap_or_else(|_| {
+        error!("DATABASE_URL environment variable not set. Exiting");
+        std::process::exit(1);
+    });
+
+    PgPoolOptions::new()
+        .max_connections(5)
+        .connect(&db_url)
+        .await
+}
+
+async fn run_fetch_loop(db_pool: PgPool) {
+    let mut cache = FeedItemCache::new(50);
+    let fetch_interval = Duration::from_secs(30);
+
+    info!("Starting item fetch loop...");
+    loop {
+        match fetch::fetch_feed_items().await {
+            Ok(fetched_items) => {
+                debug!("Fetched {} items. Processing for new entries...", fetched_items.len());
+                
+                let new_items = cache.process_and_filter_new(fetched_items);
+                debug!("New items after filtering: {}", new_items.len());
+
+                if !new_items.is_empty() {
+                    match db::insert_feed_items_batch(&db_pool, &new_items).await {
+                        Ok(_) => {
+                            info!("Successfully inserted batch of {} items into the database.", new_items.len());
+                        }
+                        Err(e) => {
+                            error!("Error inserting batch into the database: {}", e);
+                        }
+                    }
+                } else {
+                    debug!("No new items found in this fetch.");
+                }
+            }
+            Err(e) => {
+                error!("Failed to fetch feed items: {}", e);
+            }
+        }
+
+        debug!("Waiting for {:?} before next fetch.", fetch_interval);
+        sleep(fetch_interval).await;
+    }
 }
 
 #[tokio::main]
@@ -38,35 +90,17 @@ async fn main() {
 
     debug!("Debug logging enabled");
 
-    let mut cache = FeedItemCache::new(50);
-    let fetch_interval = Duration::from_secs(30);
+    let db_pool = match create_db_pool().await {
+        Ok(pool) => {
+            info!("Database connection pool created successfully.");
+            pool
+        }
+        Err(e) => {
+            error!("Failed to create database connection pool: {:?}", e);
+            std::process::exit(1);
+        }
+    };
 
     info!("Fetching feed items...");
-    loop {
-        match fetch::fetch_feed_items_reqwest().await {
-            Ok(items) => {
-                debug!("Fetched {} items. Processing new ones...", items.len());
-                let mut new_item_count = 0;
-                for item in items {
-                    if cache.add_and_check(&item) {
-                        new_item_count += 1;
-                        debug!(
-                            "  -> New Item: {:?} (ID: {:?}), Date: {:?}",
-                            item.full_product_name.as_deref().unwrap_or("N/A"),
-                            item.id,
-                            item.date_time,
-                        );
-                    }
-                }
-                debug!("Processed {} new items. Cache size: {}", new_item_count, cache.len());
-            }
-            Err(e) => {
-                error!("Error fetching feed items: {}", e);
-            }
-        }
-
-        debug!("Waiting for {:?} before next fetch...", fetch_interval);
-        sleep(fetch_interval).await;
-        debug!("----------------------------------------");
-    }
+    run_fetch_loop(db_pool.clone()).await;
 }
