@@ -34,9 +34,6 @@ CREATE TABLE "DisplayPrice" (
 );
 
 -- Create Indexes
-CREATE UNIQUE INDEX "SocialShoppingItem_userName_dateTime_socialShoppingTransact_key"
-ON "SocialShoppingItem"("userName", "dateTime", "socialShoppingTransactionTypeId", "url");
-
 CREATE UNIQUE INDEX "DisplayPrice_socialShoppingItemId_key"
 ON "DisplayPrice"("socialShoppingItemId");
 
