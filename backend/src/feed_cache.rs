@@ -6,8 +6,8 @@ use chrono::{DateTime, Utc};
 type FeedItemKey = (
     String,
     DateTime<Utc>,
-    Option<i32>,
-    Option<String>,
+    i32,
+    String,
 );
 
 fn create_key(item: &FeedItem) -> FeedItemKey {

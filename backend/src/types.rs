@@ -1,17 +1,25 @@
 #![allow(dead_code)]
-use serde::Deserialize;
+use serde::{Serialize, Deserialize};
 use chrono::{DateTime, Utc};
+use rust_decimal::Decimal;
 
-mod string_to_u32 {
+mod string_to_i32 {
     use serde::{self, Deserialize, Deserializer};
     use std::str::FromStr;
 
-    pub fn deserialize<'de, D>(deserializer: D) -> Result<u32, D::Error>
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<i32, D::Error>
     where
         D: Deserializer<'de>,
     {
         let s = String::deserialize(deserializer)?;
-        u32::from_str(&s).map_err(serde::de::Error::custom)
+        i32::from_str(&s).map_err(serde::de::Error::custom)
+    }
+
+    pub fn serialize<S>(value: &i32, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_str(&value.to_string())
     }
 }
 
@@ -29,13 +37,23 @@ mod trim_opt_string {
             None => Ok(None),
         }
     }
+
+    pub fn serialize<S>(value: &Option<String>, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        match value {
+            Some(s) => serializer.serialize_some(&s.trim_start()),
+            None => serializer.serialize_none(),
+        }
+    }
 }
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct FeedItem {
-    #[serde(with = "string_to_u32")]
-    pub id: u32,
+    #[serde(with = "string_to_i32")]
+    pub id: i32,
     pub user_name: String,
     pub city_name: Option<String>,
     pub date_time: DateTime<Utc>,
@@ -50,17 +68,17 @@ pub struct FeedItem {
     pub quote: Option<String>,
     pub vote_type_id: Option<i32>,
     pub product_type_name: Option<String>,
-    pub social_shopping_transaction_type_id: Option<i32>,
-    pub url: Option<String>,
-    pub rating: Option<f32>,
+    pub social_shopping_transaction_type_id: i32,
+    pub url: String,
+    pub rating: Option<i32>,
     pub search_string: Option<String>,
 }
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct DisplayPrice {
-    pub amount_inclusive: f64,
-    pub amount_exclusive: f64,
+    pub amount_inclusive: Decimal,
+    pub amount_exclusive: Decimal,
     pub currency: String,
 }
 
