@@ -211,6 +211,8 @@ Example response:
 }
 ```
 
+The IDs returned do not define a uniqe entry! Meaning if you run the request multiple times you will get different results. Meaning you can get the same data between requests, but the IDs will be different. 
+
 Based on that we know the different types of live feed activities that are defined with `socialShoppingTransactionTypeId`:
 
 | Key                         | ID | Description                                                                        |
