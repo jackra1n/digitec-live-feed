@@ -7,6 +7,7 @@ use sqlx::{PgPool, Error};
 use tokio::time::sleep;
 use simplelog::*;
 use clap::Parser;
+use axum::{routing::get, Router, response::{IntoResponse, Response, Json}, extract::State,http::StatusCode};
 
 mod fetch;
 mod db;
@@ -39,6 +40,7 @@ async fn run_fetch_loop(db_pool: PgPool) {
     let mut cache = FeedItemCache::new(50);
     let fetch_interval = Duration::from_secs(30);
 
+    info!("Starting fetch loop with interval of {:?} seconds", fetch_interval.as_secs());
     loop {
         match fetch::fetch_feed_items().await {
             Ok(fetched_items) => {
@@ -102,6 +104,15 @@ async fn main() {
         }
     };
 
-    info!("Starting item fetch loop...");
-    run_fetch_loop(db_pool.clone()).await;
+    let fetch_pool = db_pool.clone();
+    tokio::spawn(async move {
+        run_fetch_loop(fetch_pool).await;
+    });
+    info!("Background fetch loop spawned");
+
+    let app = Router::new()
+        .route("/health", get(|| async { "OK" }));
+
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:3133").await.unwrap();
+    axum::serve(listener, app).await.unwrap();
 }
