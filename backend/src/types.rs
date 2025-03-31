@@ -1,5 +1,5 @@
 #![allow(dead_code)]
-use serde::{Serialize, Deserialize};
+use serde::{Serialize, Deserialize, Serializer};
 use chrono::{DateTime, Utc};
 use rust_decimal::Decimal;
 
@@ -49,6 +49,14 @@ mod trim_opt_string {
     }
 }
 
+pub fn serialize_decimal_as_string<S>(decimal: &Decimal, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    let formatted = decimal.round_dp(2).to_string();
+    serializer.serialize_str(&formatted)
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct FeedItem {
@@ -77,7 +85,9 @@ pub struct FeedItem {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct DisplayPrice {
+    #[serde(serialize_with = "serialize_decimal_as_string")]
     pub amount_inclusive: Decimal,
+    #[serde(serialize_with = "serialize_decimal_as_string")]
     pub amount_exclusive: Decimal,
     pub currency: String,
 }
