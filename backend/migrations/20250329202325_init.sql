@@ -19,6 +19,9 @@ CREATE TABLE "SocialShoppingItem" (
     "createdAt" TIMESTAMP(3) WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "SocialShoppingItem_pkey" PRIMARY KEY ("id")
+
+    CONSTRAINT "SocialShoppingItem_userName_dateTime_sstTypeId_url_uq"
+        UNIQUE ("userName", "dateTime", "socialShoppingTransactionTypeId", "url")
 );
 
 CREATE TABLE "DisplayPrice" (
