@@ -205,7 +205,6 @@ async fn main() {
 
     let app = Router::new()
         .route("/health", get(|| async { "OK" }))
-        .route("/last-items", get(latest_feed_items_handler))
         .route("/feed", get(feed_items_handler))
         .route("/brands", get(brands_handler))
         .route("/cities", get(cities_handler))
@@ -213,22 +212,4 @@ async fn main() {
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3133").await.unwrap();
     axum::serve(listener, app.into_make_service()).await.unwrap();
-}
-
-#[axum::debug_handler]
-async fn latest_feed_items_handler(
-    State(db_pool): State<PgPool>,
-) -> Result<Json<Vec<types::FeedItem>>, StatusCode> {
-    let items_result = db::get_latest_feed_items(&db_pool, 6).await;
-
-    match items_result {
-        Ok(items) => {
-            debug!("Successfully fetched {} items from DB", items.len());
-            Ok(Json(items))
-        }
-        Err(e) => {
-            error!("Database error in latest_feed_items_handler: {:?}", e); 
-            Err(StatusCode::INTERNAL_SERVER_ERROR)
-        }
-    }
 }
