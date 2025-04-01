@@ -7,7 +7,15 @@ use sqlx::{PgPool, Error};
 use tokio::time::sleep;
 use simplelog::*;
 use clap::Parser;
-use axum::{routing::get, Router, response::Json, extract::State, http::StatusCode};
+use axum::{
+    routing::get,
+    Router,
+    response::Json,
+    extract::{State, Query},
+    http::StatusCode,
+};
+use serde::{Deserialize, Serialize};
+use chrono::{DateTime, Utc};
 
 mod fetch;
 mod db;
@@ -72,6 +80,91 @@ async fn run_fetch_loop(db_pool: PgPool) {
     }
 }
 
+#[derive(Deserialize)]
+struct FeedQueryParams {
+    page: Option<i64>,
+    limit: Option<i64>,
+    transaction_type: Option<i32>,
+    brand: Option<String>,
+    city: Option<String>,
+    start_date: Option<DateTime<Utc>>,
+    end_date: Option<DateTime<Utc>>,
+    search: Option<String>,
+}
+
+#[derive(Serialize)]
+struct PaginatedResponse<T> {
+    items: Vec<T>,
+    total: i64,
+    page: i64,
+    total_pages: i64,
+}
+
+#[axum::debug_handler]
+async fn feed_items_handler(
+    State(db_pool): State<PgPool>,
+    Query(params): Query<FeedQueryParams>,
+) -> Result<Json<PaginatedResponse<types::FeedItem>>, StatusCode> {
+    let page = params.page.unwrap_or(1);
+    let limit = params.limit.unwrap_or(10);
+    let offset = (page - 1) * limit;
+
+    let items_result = db::get_feed_items_with_filters(
+        &db_pool,
+        limit,
+        offset,
+        params.transaction_type,
+        params.brand.clone(),
+        params.city.clone(),
+        params.start_date,
+        params.end_date,
+        params.search.clone(),
+    ).await;
+
+    let total_result = db::get_total_count_with_filters(
+        &db_pool,
+        params.transaction_type,
+        params.brand,
+        params.city,
+        params.start_date,
+        params.end_date,
+        params.search,
+    ).await;
+
+    match (items_result, total_result) {
+        (Ok(items), Ok(total)) => {
+            let total_pages = (total + limit - 1) / limit;
+            Ok(Json(PaginatedResponse {
+                items,
+                total,
+                page,
+                total_pages,
+            }))
+        }
+        _ => Err(StatusCode::INTERNAL_SERVER_ERROR),
+    }
+}
+
+#[axum::debug_handler]
+async fn brands_handler(
+    State(db_pool): State<PgPool>,
+) -> Result<Json<Vec<String>>, StatusCode> {
+    match db::get_unique_brands(&db_pool).await {
+        Ok(brands) => Ok(Json(brands)),
+        Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
+    }
+}
+
+#[axum::debug_handler]
+async fn cities_handler(
+    State(db_pool): State<PgPool>,
+) -> Result<Json<Vec<String>>, StatusCode> {
+    match db::get_unique_cities(&db_pool).await {
+        Ok(cities) => Ok(Json(cities)),
+        Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
+    }
+}
+
 #[tokio::main]
 async fn main() {
     let cli = Cli::parse();
@@ -113,6 +206,9 @@ async fn main() {
     let app = Router::new()
         .route("/health", get(|| async { "OK" }))
         .route("/last-items", get(latest_feed_items_handler))
+        .route("/feed", get(feed_items_handler))
+        .route("/brands", get(brands_handler))
+        .route("/cities", get(cities_handler))
         .with_state(db_pool);
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3133").await.unwrap();

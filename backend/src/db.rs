@@ -185,3 +185,218 @@ pub async fn get_latest_feed_items(pool: &PgPool, limit: i64) -> Result<Vec<Feed
 
     items.into_iter().collect()
 }
+
+pub async fn get_feed_items_with_filters(
+    pool: &PgPool,
+    limit: i64,
+    offset: i64,
+    transaction_type: Option<i32>,
+    brand: Option<String>,
+    city: Option<String>,
+    start_date: Option<DateTime<Utc>>,
+    end_date: Option<DateTime<Utc>>,
+    search_query: Option<String>,
+) -> Result<Vec<FeedItem>, Error> {
+    let mut conditions = vec!["1=1".to_string()];
+    let mut params: Vec<String> = vec![];
+    let mut param_pos = 1;
+
+    if let Some(tt) = transaction_type {
+        conditions.push(format!("ssi.\"socialShoppingTransactionTypeId\" = ${}", param_pos));
+        params.push(tt.to_string());
+        param_pos += 1;
+    }
+
+    if let Some(b) = brand {
+        conditions.push(format!("ssi.\"brandName\" = ${}", param_pos));
+        params.push(b);
+        param_pos += 1;
+    }
+
+    if let Some(c) = city {
+        conditions.push(format!("ssi.\"cityName\" = ${}", param_pos));
+        params.push(c);
+        param_pos += 1;
+    }
+
+    if let Some(sd) = start_date {
+        conditions.push(format!("ssi.\"dateTime\" >= ${}", param_pos));
+        params.push(sd.to_rfc3339());
+        param_pos += 1;
+    }
+
+    if let Some(ed) = end_date {
+        conditions.push(format!("ssi.\"dateTime\" <= ${}", param_pos));
+        params.push(ed.to_rfc3339());
+        param_pos += 1;
+    }
+
+    if let Some(sq) = search_query {
+        conditions.push(format!(
+            "(ssi.\"fullProductName\" ILIKE ${} OR ssi.\"brandName\" ILIKE ${} OR ssi.\"searchString\" ILIKE ${})",
+            param_pos, param_pos + 1, param_pos + 2
+        ));
+        let search_pattern = format!("%{}%", sq);
+        params.push(search_pattern.clone());
+        params.push(search_pattern.clone());
+        params.push(search_pattern);
+        param_pos += 3;
+    }
+
+    let where_clause = conditions.join(" AND ");
+    let sql = format!(
+        r#"
+        SELECT
+            ssi.id,
+            ssi."userName",
+            ssi."cityName",
+            ssi."dateTime",
+            ssi."imageUrl",
+            ssi."brandName",
+            ssi."fullProductName",
+            ssi."oAuthProviderName",
+            ssi."targetUserName",
+            ssi.quote,
+            ssi."voteTypeId",
+            ssi."productTypeName",
+            ssi."socialShoppingTransactionTypeId",
+            ssi.url,
+            ssi.rating,
+            ssi."searchString",
+            dp."amountInclusive" AS amount_inclusive,
+            dp."amountExclusive" AS amount_exclusive,
+            dp.currency AS currency
+        FROM
+            "SocialShoppingItem" ssi
+        LEFT JOIN
+            "DisplayPrice" dp ON ssi.id = dp."socialShoppingItemId"
+        WHERE
+            {}
+        ORDER BY
+            ssi."dateTime" DESC
+        LIMIT ${} OFFSET ${}
+        "#,
+        where_clause,
+        param_pos,
+        param_pos + 1
+    );
+
+    let mut query = sqlx::query(&sql);
+    for param in params {
+        query = query.bind(param);
+    }
+    query = query.bind(limit);
+    query = query.bind(offset);
+
+    let items = query
+        .map(|row: PgRow| map_row_to_feed_item(&row))
+        .fetch_all(pool)
+        .await?;
+
+    items.into_iter().collect()
+}
+
+pub async fn get_total_count_with_filters(
+    pool: &PgPool,
+    transaction_type: Option<i32>,
+    brand: Option<String>,
+    city: Option<String>,
+    start_date: Option<DateTime<Utc>>,
+    end_date: Option<DateTime<Utc>>,
+    search_query: Option<String>,
+) -> Result<i64, Error> {
+    let mut conditions = vec!["1=1".to_string()];
+    let mut params: Vec<String> = vec![];
+    let mut param_count = 1;
+
+    if let Some(tt) = transaction_type {
+        conditions.push(format!("ssi.\"socialShoppingTransactionTypeId\" = ${}", param_count));
+        params.push(tt.to_string());
+        param_count += 1;
+    }
+
+    if let Some(b) = brand {
+        conditions.push(format!("ssi.\"brandName\" = ${}", param_count));
+        params.push(b);
+        param_count += 1;
+    }
+
+    if let Some(c) = city {
+        conditions.push(format!("ssi.\"cityName\" = ${}", param_count));
+        params.push(c);
+        param_count += 1;
+    }
+
+    if let Some(sd) = start_date {
+        conditions.push(format!("ssi.\"dateTime\" >= ${}", param_count));
+        params.push(sd.to_rfc3339());
+        param_count += 1;
+    }
+
+    if let Some(ed) = end_date {
+        conditions.push(format!("ssi.\"dateTime\" <= ${}", param_count));
+        params.push(ed.to_rfc3339());
+        param_count += 1;
+    }
+
+    if let Some(sq) = search_query {
+        conditions.push(format!(
+            "(ssi.\"fullProductName\" ILIKE ${} OR ssi.\"brandName\" ILIKE ${} OR ssi.\"searchString\" ILIKE ${})",
+            param_count, param_count + 1, param_count + 2
+        ));
+        let search_pattern = format!("%{}%", sq);
+        params.push(search_pattern.clone());
+        params.push(search_pattern.clone());
+        params.push(search_pattern);
+    }
+
+    let where_clause = conditions.join(" AND ");
+    let sql = format!(
+        r#"
+        SELECT COUNT(*)
+        FROM "SocialShoppingItem" ssi
+        WHERE {}
+        "#,
+        where_clause
+    );
+
+    let mut query = sqlx::query(&sql);
+    for param in params {
+        query = query.bind(param);
+    }
+
+    let count: i64 = query.fetch_one(pool).await?.get(0);
+    Ok(count)
+}
+
+pub async fn get_unique_brands(pool: &PgPool) -> Result<Vec<String>, Error> {
+    let sql = r#"
+        SELECT DISTINCT "brandName"
+        FROM "SocialShoppingItem"
+        WHERE "brandName" IS NOT NULL
+        ORDER BY "brandName"
+    "#;
+
+    let brands = sqlx::query(sql)
+        .map(|row: PgRow| row.get::<String, _>("brandName"))
+        .fetch_all(pool)
+        .await?;
+
+    Ok(brands)
+}
+
+pub async fn get_unique_cities(pool: &PgPool) -> Result<Vec<String>, Error> {
+    let sql = r#"
+        SELECT DISTINCT "cityName"
+        FROM "SocialShoppingItem"
+        WHERE "cityName" IS NOT NULL
+        ORDER BY "cityName"
+    "#;
+
+    let cities = sqlx::query(sql)
+        .map(|row: PgRow| row.get::<String, _>("cityName"))
+        .fetch_all(pool)
+        .await?;
+
+    Ok(cities)
+}
