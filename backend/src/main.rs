@@ -12,10 +12,11 @@ use axum::{
     Router,
     response::Json,
     extract::{State, Query},
-    http::StatusCode,
+    http::{StatusCode, Method, HeaderValue},
 };
 use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};
+use tower_http::cors::{Any, CorsLayer};
 
 mod fetch;
 mod db;
@@ -203,13 +204,28 @@ async fn main() {
     });
     info!("Background fetch loop spawned");
 
+    let allowed_origins = std::env::var("ALLOWED_ORIGINS")
+        .unwrap_or_else(|_| "http://localhost:5173".to_string());
+
+    let origins: Vec<HeaderValue> = allowed_origins
+        .split(',')
+        .map(|s| s.trim().parse::<HeaderValue>().unwrap())
+        .collect();
+
+    let cors = CorsLayer::new()
+        .allow_origin(origins)
+        .allow_methods([Method::GET, Method::POST]) // Adjust methods as needed
+        .allow_headers(Any);
+
     let app = Router::new()
         .route("/health", get(|| async { "OK" }))
         .route("/feed", get(feed_items_handler))
         .route("/brands", get(brands_handler))
         .route("/cities", get(cities_handler))
-        .with_state(db_pool);
+        .with_state(db_pool)
+        .layer(cors);
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3133").await.unwrap();
+    info!("Listening on {}", listener.local_addr().unwrap());
     axum::serve(listener, app.into_make_service()).await.unwrap();
 }
