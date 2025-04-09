@@ -400,3 +400,177 @@ pub async fn get_unique_cities(pool: &PgPool) -> Result<Vec<String>, Error> {
 
     Ok(cities)
 }
+
+pub async fn get_brands_paginated(
+    pool: &PgPool, 
+    page: i64, 
+    limit: i64, 
+    search: Option<String>
+) -> Result<(Vec<String>, i64), Error> {
+    let offset = (page - 1) * limit;
+    
+    // Build the query based on whether search term is provided
+    let (query_sql, count_sql) = if let Some(search_term) = &search {
+        let pattern = format!("%{}%", search_term);
+        (
+            format!(
+                r#"
+                SELECT DISTINCT "brandName"
+                FROM "SocialShoppingItem"
+                WHERE "brandName" IS NOT NULL
+                AND "brandName" ILIKE $1
+                ORDER BY "brandName"
+                LIMIT $2 OFFSET $3
+                "#
+            ),
+            format!(
+                r#"
+                SELECT COUNT(DISTINCT "brandName")
+                FROM "SocialShoppingItem"
+                WHERE "brandName" IS NOT NULL
+                AND "brandName" ILIKE $1
+                "#
+            )
+        )
+    } else {
+        (
+            format!(
+                r#"
+                SELECT DISTINCT "brandName"
+                FROM "SocialShoppingItem"
+                WHERE "brandName" IS NOT NULL
+                ORDER BY "brandName"
+                LIMIT $1 OFFSET $2
+                "#
+            ),
+            format!(
+                r#"
+                SELECT COUNT(DISTINCT "brandName")
+                FROM "SocialShoppingItem"
+                WHERE "brandName" IS NOT NULL
+                "#
+            )
+        )
+    };
+    
+    // Execute queries in parallel using tokio::join!
+    let brands_future = if let Some(search_term) = &search {
+        let pattern = format!("%{}%", search_term);
+        sqlx::query(&query_sql)
+            .bind(pattern)
+            .bind(limit)
+            .bind(offset)
+            .map(|row: PgRow| row.get::<String, _>("brandName"))
+            .fetch_all(pool)
+    } else {
+        sqlx::query(&query_sql)
+            .bind(limit)
+            .bind(offset)
+            .map(|row: PgRow| row.get::<String, _>("brandName"))
+            .fetch_all(pool)
+    };
+    
+    let count_future = if let Some(search_term) = &search {
+        let pattern = format!("%{}%", search_term);
+        sqlx::query_scalar::<_, i64>(&count_sql)
+            .bind(pattern)
+            .fetch_one(pool)
+    } else {
+        sqlx::query_scalar::<_, i64>(&count_sql)
+            .fetch_one(pool)
+    };
+    
+    let (brands_result, count_result) = tokio::join!(brands_future, count_future);
+    
+    match (brands_result, count_result) {
+        (Ok(brands), Ok(count)) => Ok((brands, count)),
+        (Err(e), _) | (_, Err(e)) => Err(e),
+    }
+}
+
+pub async fn get_cities_paginated(
+    pool: &PgPool, 
+    page: i64, 
+    limit: i64, 
+    search: Option<String>
+) -> Result<(Vec<String>, i64), Error> {
+    let offset = (page - 1) * limit;
+    
+    // Build the query based on whether search term is provided
+    let (query_sql, count_sql) = if let Some(search_term) = &search {
+        let pattern = format!("%{}%", search_term);
+        (
+            format!(
+                r#"
+                SELECT DISTINCT "cityName"
+                FROM "SocialShoppingItem"
+                WHERE "cityName" IS NOT NULL
+                AND "cityName" ILIKE $1
+                ORDER BY "cityName"
+                LIMIT $2 OFFSET $3
+                "#
+            ),
+            format!(
+                r#"
+                SELECT COUNT(DISTINCT "cityName")
+                FROM "SocialShoppingItem"
+                WHERE "cityName" IS NOT NULL
+                AND "cityName" ILIKE $1
+                "#
+            )
+        )
+    } else {
+        (
+            format!(
+                r#"
+                SELECT DISTINCT "cityName"
+                FROM "SocialShoppingItem"
+                WHERE "cityName" IS NOT NULL
+                ORDER BY "cityName"
+                LIMIT $1 OFFSET $2
+                "#
+            ),
+            format!(
+                r#"
+                SELECT COUNT(DISTINCT "cityName")
+                FROM "SocialShoppingItem"
+                WHERE "cityName" IS NOT NULL
+                "#
+            )
+        )
+    };
+    
+    // Execute queries in parallel using tokio::join!
+    let cities_future = if let Some(search_term) = &search {
+        let pattern = format!("%{}%", search_term);
+        sqlx::query(&query_sql)
+            .bind(pattern)
+            .bind(limit)
+            .bind(offset)
+            .map(|row: PgRow| row.get::<String, _>("cityName"))
+            .fetch_all(pool)
+    } else {
+        sqlx::query(&query_sql)
+            .bind(limit)
+            .bind(offset)
+            .map(|row: PgRow| row.get::<String, _>("cityName"))
+            .fetch_all(pool)
+    };
+    
+    let count_future = if let Some(search_term) = &search {
+        let pattern = format!("%{}%", search_term);
+        sqlx::query_scalar::<_, i64>(&count_sql)
+            .bind(pattern)
+            .fetch_one(pool)
+    } else {
+        sqlx::query_scalar::<_, i64>(&count_sql)
+            .fetch_one(pool)
+    };
+    
+    let (cities_result, count_result) = tokio::join!(cities_future, count_future);
+    
+    match (cities_result, count_result) {
+        (Ok(cities), Ok(count)) => Ok((cities, count)),
+        (Err(e), _) | (_, Err(e)) => Err(e),
+    }
+}

@@ -93,6 +93,13 @@ struct FeedQueryParams {
     search: Option<String>,
 }
 
+#[derive(Deserialize)]
+struct PaginationParams {
+    page: Option<i64>,
+    limit: Option<i64>,
+    search: Option<String>,
+}
+
 #[derive(Serialize)]
 struct PaginatedResponse<T> {
     items: Vec<T>,
@@ -149,9 +156,22 @@ async fn feed_items_handler(
 #[axum::debug_handler]
 async fn brands_handler(
     State(db_pool): State<PgPool>,
-) -> Result<Json<Vec<String>>, StatusCode> {
-    match db::get_unique_brands(&db_pool).await {
-        Ok(brands) => Ok(Json(brands)),
+    Query(params): Query<PaginationParams>,
+) -> Result<Json<PaginatedResponse<String>>, StatusCode> {
+    let page = params.page.unwrap_or(1);
+    let limit = params.limit.unwrap_or(50);
+    let search = params.search;
+    
+    match db::get_brands_paginated(&db_pool, page, limit, search).await {
+        Ok((brands, total)) => {
+            let total_pages = (total + limit - 1) / limit;
+            Ok(Json(PaginatedResponse {
+                items: brands,
+                total,
+                page,
+                total_pages,
+            }))
+        }
         Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
     }
 }
@@ -159,9 +179,22 @@ async fn brands_handler(
 #[axum::debug_handler]
 async fn cities_handler(
     State(db_pool): State<PgPool>,
-) -> Result<Json<Vec<String>>, StatusCode> {
-    match db::get_unique_cities(&db_pool).await {
-        Ok(cities) => Ok(Json(cities)),
+    Query(params): Query<PaginationParams>,
+) -> Result<Json<PaginatedResponse<String>>, StatusCode> {
+    let page = params.page.unwrap_or(1);
+    let limit = params.limit.unwrap_or(50);
+    let search = params.search;
+    
+    match db::get_cities_paginated(&db_pool, page, limit, search).await {
+        Ok((cities, total)) => {
+            let total_pages = (total + limit - 1) / limit;
+            Ok(Json(PaginatedResponse {
+                items: cities,
+                total,
+                page,
+                total_pages,
+            }))
+        }
         Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
     }
 }
