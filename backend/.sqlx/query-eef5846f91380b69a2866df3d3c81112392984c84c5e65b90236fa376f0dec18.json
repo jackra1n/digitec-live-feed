@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            WITH input_rows (name) AS ( SELECT * FROM UNNEST($1::text[]) ),\n            inserted AS (\n                INSERT INTO \"Brand\" (name) SELECT name FROM input_rows\n                ON CONFLICT (name) DO NOTHING RETURNING id, name\n            )\n            SELECT id as \"id!\", name as \"name!\" -- Add override for name\n            FROM inserted\n            UNION ALL\n            SELECT b.id as \"id!\", b.name as \"name!\" -- Add override for name\n            FROM \"Brand\" b JOIN input_rows ir ON b.name = ir.name;\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id!",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "name!",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "TextArray"
+      ]
+    },
+    "nullable": [
+      null,
+      null
+    ]
+  },
+  "hash": "eef5846f91380b69a2866df3d3c81112392984c84c5e65b90236fa376f0dec18"
+}

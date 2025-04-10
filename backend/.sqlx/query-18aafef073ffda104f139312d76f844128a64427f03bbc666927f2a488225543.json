@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                INSERT INTO \"DisplayPrice\" ( \"socialShoppingItemId\", \"amountInclusive\", \"amountExclusive\", \"currency\" )\n                VALUES ( $1, $2, $3, $4 )\n                ON CONFLICT (\"socialShoppingItemId\") DO NOTHING\n                ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Numeric",
+        "Numeric",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "18aafef073ffda104f139312d76f844128a64427f03bbc666927f2a488225543"
+}

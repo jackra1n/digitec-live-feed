@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO \"RawCityNameMap\" (\"rawInput\", \"mappingStatus\")\n            SELECT name, 'unprocessed' FROM UNNEST($1::text[]) as name\n            ON CONFLICT (\"rawInput\") DO NOTHING;\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "TextArray"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "3a63217d224e5d6bc6d326197a88a3b89ee1be8a96a4d86b463e234db5db8737"
+}
