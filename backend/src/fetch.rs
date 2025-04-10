@@ -1,7 +1,9 @@
-use serde::Serialize;
-use reqwest::header::{HeaderMap, ACCEPT, CONTENT_TYPE, ORIGIN, REFERER, ACCEPT_ENCODING, ACCEPT_LANGUAGE};
+use crate::models::api_input::{ApiFeedItem, GraphQLResponse};
+use reqwest::header::{
+    HeaderMap, ACCEPT, ACCEPT_ENCODING, ACCEPT_LANGUAGE, CONTENT_TYPE, ORIGIN, REFERER,
+};
 use reqwest::Error;
-use crate::types::{FeedItem, GraphQLResponse};
+use serde::Serialize;
 
 const DIGITEC_URL: &str = "https://www.digitec.ch/api/graphql/get-social-shoppings";
 const USER_AGENT: &str = "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36";
@@ -54,7 +56,10 @@ fn create_headers() -> HeaderMap {
     headers.insert(ACCEPT, "*/*".parse().unwrap());
     headers.insert(CONTENT_TYPE, "application/json".parse().unwrap());
     headers.insert(ORIGIN, "https://www.digitec.ch".parse().unwrap());
-    headers.insert(REFERER, "https://www.digitec.ch/en/daily-deal".parse().unwrap());
+    headers.insert(
+        REFERER,
+        "https://www.digitec.ch/en/daily-deal".parse().unwrap(),
+    );
     headers.insert("sec-fetch-mode", "cors".parse().unwrap());
     // additional headers, not really needed
     headers.insert(ACCEPT_ENCODING, "gzip, deflate, br".parse().unwrap());
@@ -66,26 +71,29 @@ fn create_client(headers: HeaderMap) -> Result<reqwest::Client, reqwest::Error> 
     reqwest::Client::builder()
         .user_agent(USER_AGENT)
         .default_headers(headers)
-        .use_rustls_tls() 
+        .use_rustls_tls()
         .timeout(std::time::Duration::from_secs(10))
         .build()
 }
 
-pub async fn fetch_feed_items() -> Result<Vec<FeedItem>, Error> {
+pub async fn fetch_feed_items() -> Result<Vec<ApiFeedItem>, Error> {
     let headers = create_headers();
-    let client = create_client(headers) 
-        .map_err(|e| {
-            error!("Error creating HTTP client: {:?}", e);
-            e
-        })?;
+    let client = create_client(headers).map_err(|e| {
+        error!("Error creating HTTP client: {:?}", e);
+        e
+    })?;
 
     let request_payload = GraphQLRequest {
         operation_name: "GET_SOCIAL_SHOPPINGS",
-        variables: Variables { take: 10, latest: None },
+        variables: Variables {
+            take: 10,
+            latest: None,
+        },
         query: GRAPHQL_QUERY,
     };
 
-    let response = client.post(DIGITEC_URL)
+    let response = client
+        .post(DIGITEC_URL)
         .json(&[request_payload])
         .send()
         .await?;
@@ -104,7 +112,8 @@ pub async fn fetch_feed_items() -> Result<Vec<FeedItem>, Error> {
         }
     };
 
-    Ok(response_vec.into_iter()
+    Ok(response_vec
+        .into_iter()
         .next()
         .map(|resp| resp.into_items().clone())
         .unwrap_or_default())

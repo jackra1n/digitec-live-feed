@@ -1,29 +1,31 @@
-#[macro_use] extern crate log;
+#[macro_use]
+extern crate log;
 extern crate simplelog;
 
-use std::time::Duration;
-use sqlx::postgres::PgPoolOptions;
-use sqlx::{PgPool, Error};
-use tokio::time::sleep;
-use simplelog::*;
-use clap::Parser;
 use axum::{
+    extract::{Query, State},
+    http::{HeaderValue, Method, StatusCode},
+    response::Json,
     routing::get,
     Router,
-    response::Json,
-    extract::{State, Query},
-    http::{StatusCode, Method, HeaderValue},
 };
-use serde::{Deserialize, Serialize};
-use chrono::{DateTime, Utc};
+use clap::Parser;
+use serde::Deserialize;
+use simplelog::*;
+use sqlx::postgres::PgPoolOptions;
+use sqlx::{Error, PgPool};
+use std::time::Duration;
+use tokio::time::sleep;
 use tower_http::cors::{Any, CorsLayer};
 
-mod fetch;
 mod db;
-mod feed_cache;
-mod types;
+mod fetch;
+mod models;
 
-use feed_cache::FeedItemCache;
+use time::macros::format_description;
+
+use models::api_output::{FeedItemResponse, PaginatedResponse};
+use models::filters::FeedItemFilters;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -33,8 +35,7 @@ struct Cli {
 }
 
 async fn create_db_pool() -> Result<PgPool, Error> {
-    let db_url = std::env::var("DATABASE_URL")
-    .unwrap_or_else(|_| {
+    let db_url = std::env::var("DATABASE_URL").unwrap_or_else(|_| {
         error!("DATABASE_URL environment variable not set. Exiting");
         std::process::exit(1);
     });
@@ -46,29 +47,34 @@ async fn create_db_pool() -> Result<PgPool, Error> {
 }
 
 async fn run_fetch_loop(db_pool: PgPool) {
-    let mut cache = FeedItemCache::new(50);
     let fetch_interval = Duration::from_secs(30);
 
-    info!("Starting fetch loop with interval of {:?} seconds", fetch_interval.as_secs());
+    info!(
+        "Starting fetch loop with interval of {:?} seconds",
+        fetch_interval.as_secs()
+    );
     loop {
         match fetch::fetch_feed_items().await {
             Ok(fetched_items) => {
-                debug!("Fetched {} items. Processing for new entries...", fetched_items.len());
-                
-                let new_items = cache.process_and_filter_new(fetched_items);
-                debug!("New items after filtering: {}", new_items.len());
+                debug!(
+                    "Fetched {} items. Processing for new entries...",
+                    fetched_items.len()
+                );
 
-                if !new_items.is_empty() {
-                    match db::insert_feed_items_batch(&db_pool, &new_items).await {
+                if !fetched_items.is_empty() {
+                    match db::insert_feed_items_batch(&db_pool, &fetched_items).await {
                         Ok(_) => {
-                            debug!("Successfully inserted batch of {} items into the database.", new_items.len());
+                            debug!(
+                                "Successfully inserted batch of {} items into the database.",
+                                fetched_items.len()
+                            );
                         }
                         Err(e) => {
                             error!("Error inserting batch into the database: {}", e);
                         }
                     }
                 } else {
-                    debug!("No new items found in this fetch.");
+                    debug!("No items found in this fetch.");
                 }
             }
             Err(e) => {
@@ -83,14 +89,10 @@ async fn run_fetch_loop(db_pool: PgPool) {
 
 #[derive(Deserialize)]
 struct FeedQueryParams {
+    #[serde(flatten)]
+    filters: FeedItemFilters,
     page: Option<i64>,
     limit: Option<i64>,
-    transaction_type: Option<i32>,
-    brand: Option<String>,
-    city: Option<String>,
-    start_date: Option<DateTime<Utc>>,
-    end_date: Option<DateTime<Utc>>,
-    search: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -100,44 +102,20 @@ struct PaginationParams {
     search: Option<String>,
 }
 
-#[derive(Serialize)]
-struct PaginatedResponse<T> {
-    items: Vec<T>,
-    total: i64,
-    page: i64,
-    total_pages: i64,
-}
-
 #[axum::debug_handler]
 async fn feed_items_handler(
     State(db_pool): State<PgPool>,
     Query(params): Query<FeedQueryParams>,
-) -> Result<Json<PaginatedResponse<types::FeedItem>>, StatusCode> {
+) -> Result<Json<PaginatedResponse<FeedItemResponse>>, StatusCode> {
     let page = params.page.unwrap_or(1);
     let limit = params.limit.unwrap_or(10);
     let offset = (page - 1) * limit;
 
-    let items_result = db::get_feed_items_with_filters(
-        &db_pool,
-        limit,
-        offset,
-        params.transaction_type,
-        params.brand.clone(),
-        params.city.clone(),
-        params.start_date,
-        params.end_date,
-        params.search.clone(),
-    ).await;
+    let filters = params.filters;
 
-    let total_result = db::get_total_count_with_filters(
-        &db_pool,
-        params.transaction_type,
-        params.brand,
-        params.city,
-        params.start_date,
-        params.end_date,
-        params.search,
-    ).await;
+    let items_result = db::get_feed_items_with_filters(&db_pool, &filters, limit, offset).await;
+
+    let total_result = db::get_total_count_with_filters(&db_pool, &filters).await;
 
     match (items_result, total_result) {
         (Ok(items), Ok(total)) => {
@@ -161,7 +139,7 @@ async fn brands_handler(
     let page = params.page.unwrap_or(1);
     let limit = params.limit.unwrap_or(50);
     let search = params.search;
-    
+
     match db::get_brands_paginated(&db_pool, page, limit, search).await {
         Ok((brands, total)) => {
             let total_pages = (total + limit - 1) / limit;
@@ -184,7 +162,7 @@ async fn cities_handler(
     let page = params.page.unwrap_or(1);
     let limit = params.limit.unwrap_or(50);
     let search = params.search;
-    
+
     match db::get_cities_paginated(&db_pool, page, limit, search).await {
         Ok((cities, total)) => {
             let total_pages = (total + limit - 1) / limit;
@@ -209,12 +187,26 @@ async fn main() {
         LevelFilter::Info
     };
 
-    CombinedLogger::init(
-        vec![
-            TermLogger::new(log_level, Config::default(), TerminalMode::Mixed, ColorChoice::Auto),
-            WriteLogger::new(LevelFilter::Info, Config::default(), std::fs::File::create("live-feed.log").unwrap()),
-        ]
-    ).unwrap();
+    let term_config = ConfigBuilder::new()
+        .set_time_format_custom(format_description!(
+            "[year]-[month]-[day] [hour]:[minute]:[second]"
+        ))
+        .build();
+
+    CombinedLogger::init(vec![
+        TermLogger::new(
+            log_level,
+            term_config.clone(),
+            TerminalMode::Mixed,
+            ColorChoice::Auto,
+        ),
+        WriteLogger::new(
+            LevelFilter::Info,
+            term_config,
+            std::fs::File::create("live-feed.log").unwrap(),
+        ),
+    ])
+    .unwrap();
 
     debug!("Debug logging enabled");
 
@@ -237,8 +229,8 @@ async fn main() {
     });
     info!("Background fetch loop spawned");
 
-    let allowed_origins = std::env::var("ALLOWED_ORIGINS")
-        .unwrap_or_else(|_| "http://localhost:5173".to_string());
+    let allowed_origins =
+        std::env::var("ALLOWED_ORIGINS").unwrap_or_else(|_| "http://localhost:5173".to_string());
 
     let origins: Vec<HeaderValue> = allowed_origins
         .split(',')
@@ -247,7 +239,7 @@ async fn main() {
 
     let cors = CorsLayer::new()
         .allow_origin(origins)
-        .allow_methods([Method::GET, Method::POST]) // Adjust methods as needed
+        .allow_methods([Method::GET, Method::POST])
         .allow_headers(Any);
 
     let app = Router::new()
@@ -260,5 +252,7 @@ async fn main() {
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3133").await.unwrap();
     info!("Listening on {}", listener.local_addr().unwrap());
-    axum::serve(listener, app.into_make_service()).await.unwrap();
+    axum::serve(listener, app.into_make_service())
+        .await
+        .unwrap();
 }
