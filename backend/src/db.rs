@@ -65,10 +65,10 @@ pub async fn insert_feed_items_batch(pool: &PgPool, items: &[ApiFeedItem]) -> Re
                 INSERT INTO "Brand" (name) SELECT name FROM input_rows
                 ON CONFLICT (name) DO NOTHING RETURNING id, name
             )
-            SELECT id as "id!", name as "name!" -- Add override for name
+            SELECT id as "id!", name as "name!"
             FROM inserted
             UNION ALL
-            SELECT b.id as "id!", b.name as "name!" -- Add override for name
+            SELECT b.id as "id!", b.name as "name!"
             FROM "Brand" b JOIN input_rows ir ON b.name = ir.name;
             "#,
             &brand_names
@@ -91,10 +91,10 @@ pub async fn insert_feed_items_batch(pool: &PgPool, items: &[ApiFeedItem]) -> Re
                 INSERT INTO "ProductType" (name) SELECT name FROM input_rows
                 ON CONFLICT (name) DO NOTHING RETURNING id, name
             )
-            SELECT id as "id!", name as "name!" -- Add override for name
+            SELECT id as "id!", name as "name!"
             FROM inserted
             UNION ALL
-            SELECT pt.id as "id!", pt.name as "name!" -- Add override for name
+            SELECT pt.id as "id!", pt.name as "name!"
             FROM "ProductType" pt JOIN input_rows ir ON pt.name = ir.name;
             "#,
             &ptype_names
@@ -275,23 +275,23 @@ fn map_row_to_feed_item_response(row: &PgRow) -> Result<FeedItemResponse, sqlx::
 
     Ok(FeedItemResponse {
         id: row.try_get("ssi_id")?,
-        user_name: row.try_get("ssi_userName")?,
-        city_name: row.try_get("cc_canonicalName")?,
-        canton: row.try_get("cc_canton")?,
-        country_code: row.try_get("cc_countryCode")?,
-        date_time: row.try_get("ssi_dateTime")?,
+        user_name: row.try_get("ssi_username")?,
+        city_name: row.try_get("canonicalname")?,
+        canton: row.try_get("canton")?,
+        country_code: row.try_get("countrycode")?,
+        date_time: row.try_get("ssi_datetime")?,
         image_url: row.try_get("ssi_imageUrl")?,
         brand_name: row.try_get("b_name")?,
-        full_product_name: row.try_get("ssi_fullProductName")?,
-        o_auth_provider_name: row.try_get("ssi_oAuthProviderName")?,
-        target_user_name: row.try_get("ssi_targetUserName")?,
+        full_product_name: row.try_get("ssi_fullproductname")?,
+        o_auth_provider_name: row.try_get("ssi_oauthprovidername")?,
+        target_user_name: row.try_get("ssi_targetusername")?,
         quote: row.try_get("ssi_quote")?,
-        vote_type_id: row.try_get("ssi_voteTypeId")?,
+        vote_type_id: row.try_get("ssi_votetypeid")?,
         product_type_name: row.try_get("pt_name")?,
-        social_shopping_transaction_type_id: row.try_get("ssi_socialShoppingTransactionTypeId")?,
+        social_shopping_transaction_type_id: row.try_get("ssi_socialshoppingtransactiontypeid")?,
         url: row.try_get("ssi_url")?,
         rating: row.try_get("ssi_rating")?,
-        search_string: row.try_get("ssi_searchString")?,
+        search_string: row.try_get("ssi_searchstring")?,
         display_price,
     })
 }
@@ -306,27 +306,27 @@ pub async fn get_feed_items_with_filters(
         r#"
         SELECT
             ssi.id as ssi_id,
-            ssi."userName" as "ssi_userName",
-            ssi."cityName" as "ssi_cityName_raw", -- Keep raw if needed, maybe for debugging
-            ssi."dateTime" as "ssi_dateTime",
+            ssi."userName" as "ssi_username",
+            ssi."cityName" as "ssi_cityName_raw",
+            ssi."dateTime" as "ssi_datetime",
             ssi."imageUrl" as "ssi_imageUrl",
-            ssi."fullProductName" as "ssi_fullProductName",
-            ssi."oAuthProviderName" as "ssi_oAuthProviderName",
-            ssi."targetUserName" as "ssi_targetUserName",
+            ssi."fullProductName" as "ssi_fullproductname",
+            ssi."oAuthProviderName" as "ssi_oauthprovidername",
+            ssi."targetUserName" as "ssi_targetusername",
             ssi.quote as ssi_quote,
-            ssi."voteTypeId" as "ssi_voteTypeId",
-            ssi."socialShoppingTransactionTypeId" as "ssi_socialShoppingTransactionTypeId",
+            ssi."voteTypeId" as "ssi_votetypeid",
+            ssi."socialShoppingTransactionTypeId" as "ssi_socialshoppingtransactiontypeid",
             ssi.url as ssi_url,
             ssi.rating as ssi_rating,
-            ssi."searchString" as "ssi_searchString",
+            ssi."searchString" as "ssi_searchstring",
             dp."amountInclusive" AS price_amount_inclusive,
             dp."amountExclusive" AS price_amount_exclusive,
             dp.currency AS price_currency,
-            b.name as b_name,                 -- Brand name
-            pt.name as pt_name,               -- Product Type name
-            cc."canonicalName" as cc_canonicalName, -- Canonical City name
-            cc.canton as cc_canton,
-            cc."countryCode" as cc_countryCode
+            b.name as b_name,
+            pt.name as pt_name,
+            cc."canonicalName" as canonicalname,
+            cc.canton as canton,
+            cc."countryCode" as countrycode
         FROM
             "SocialShoppingItem" ssi
         LEFT JOIN "DisplayPrice" dp ON ssi.id = dp."socialShoppingItemId"

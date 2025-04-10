@@ -10,7 +10,6 @@ use axum::{
     Router,
 };
 use clap::Parser;
-use serde::Deserialize;
 use simplelog::*;
 use sqlx::postgres::PgPoolOptions;
 use sqlx::{Error, PgPool};
@@ -25,7 +24,7 @@ mod models;
 use time::macros::format_description;
 
 use models::api_output::{FeedItemResponse, PaginatedResponse};
-use models::filters::FeedItemFilters;
+use models::filters::{FeedQueryParams, PaginationParams};
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -87,21 +86,6 @@ async fn run_fetch_loop(db_pool: PgPool) {
     }
 }
 
-#[derive(Deserialize)]
-struct FeedQueryParams {
-    #[serde(flatten)]
-    filters: FeedItemFilters,
-    page: Option<i64>,
-    limit: Option<i64>,
-}
-
-#[derive(Deserialize)]
-struct PaginationParams {
-    page: Option<i64>,
-    limit: Option<i64>,
-    search: Option<String>,
-}
-
 #[axum::debug_handler]
 async fn feed_items_handler(
     State(db_pool): State<PgPool>,
@@ -127,7 +111,14 @@ async fn feed_items_handler(
                 total_pages,
             }))
         }
-        _ => Err(StatusCode::INTERNAL_SERVER_ERROR),
+        (Err(e), _) => {
+           error!("Error fetching feed items: {}", e);
+           Err(StatusCode::INTERNAL_SERVER_ERROR)
+       }
+        (_, Err(e)) => {
+           error!("Error fetching total feed count: {}", e);
+           Err(StatusCode::INTERNAL_SERVER_ERROR)
+       }
     }
 }
 
