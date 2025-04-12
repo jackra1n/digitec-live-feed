@@ -5,7 +5,7 @@ use crate::models::{
     filters::FeedItemFilters,
 };
 use rust_decimal::Decimal;
-use sqlx::{postgres::{PgRow, PgQueryResult}, Error, PgPool, QueryBuilder, Row};
+use sqlx::{postgres::PgRow, Error, PgPool, QueryBuilder, Row};
 use std::collections::{HashMap, HashSet};
 
 pub async fn insert_feed_items_batch(pool: &PgPool, items: &[ApiFeedItem]) -> Result<(), Error> {
@@ -162,10 +162,10 @@ pub async fn insert_feed_items_batch(pool: &PgPool, items: &[ApiFeedItem]) -> Re
             product_type_id
         );
 
-        let item_insert_result: Result<PgQueryResult, sqlx::Error> = sqlx::query!(
+        let ssi_insert_result = sqlx::query!(
             r#"
             INSERT INTO "SocialShoppingItem" (
-                id, "userName", "cityName", "dateTime", "imageUrl", "brandId",
+                api_id, "userName", "cityName", "dateTime", "imageUrl", "brandId",
                 "fullProductName", "oAuthProviderName", "targetUserName", "quote",
                 "voteTypeId", "productTypeId", "socialShoppingTransactionTypeId",
                 "url", "rating", "searchString"
@@ -173,6 +173,7 @@ pub async fn insert_feed_items_batch(pool: &PgPool, items: &[ApiFeedItem]) -> Re
                 $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16
             )
             ON CONFLICT ("userName", "dateTime", "socialShoppingTransactionTypeId", "url") DO NOTHING
+            RETURNING id
             "#,
             item.id as i32,
             item.user_name,
@@ -191,61 +192,61 @@ pub async fn insert_feed_items_batch(pool: &PgPool, items: &[ApiFeedItem]) -> Re
             item.rating,
             item.search_string
         )
-        .execute(&mut *tx)
+        .fetch_optional(&mut *tx)
         .await;
 
-        match item_insert_result {
-            Ok(query_result) => {
-                let inserted_item = query_result.rows_affected() > 0;
+        let internal_ssi_id: Option<i64>;
 
-                if inserted_item {
-                    log::trace!("Successfully inserted or found item ID {}", item.id);
-                } else {
-                    log::trace!("Skipped inserting duplicate item ID {} based on unique constraint", item.id);
-                }
-
-                if inserted_item && item.display_price.is_some() {
-                    if let Some(price) = &item.display_price {
-                        log::trace!("Attempting to insert price for newly inserted item ID {}", item.id);
-                        let price_insert_result = sqlx::query!(
-                            r#"
-                            INSERT INTO "DisplayPrice" ( "socialShoppingItemId", "amountInclusive", "amountExclusive", "currency" )
-                            VALUES ( $1, $2, $3, $4 )
-                            -- Assuming you only want one price per item, ON CONFLICT is good.
-                            ON CONFLICT ("socialShoppingItemId") DO NOTHING
-                            "#,
-                            item.id as i32,
-                            price.amount_inclusive,
-                            price.amount_exclusive,
-                            price.currency
-                        )
-                        .execute(&mut *tx)
-                        .await;
-
-                        if let Err(e) = price_insert_result {
-                            log::error!(
-                                "Error inserting price for NEWLY INSERTED item ID {} within batch transaction: {}. Rolling back.",
-                                item.id, e
-                            );
-                            return Err(e);
-                        }
-                    }
-                } else if !inserted_item && item.display_price.is_some() {
-                     log::trace!("Skipped price insert for item ID {} because item insert was skipped.", item.id);
-                }
-
+        match ssi_insert_result {
+            Ok(Some(record)) => {
+                internal_ssi_id = Some(record.id);
+                log::trace!("Inserted SocialShoppingItem for api_id {}, got internal_id {}", item.id, record.id);
+            }
+            Ok(None) => {
+                // This is expected when ON CONFLICT DO NOTHING applies (item already exists)
+                internal_ssi_id = None;
+                log::trace!("SocialShoppingItem for api_id {} already exists (ON CONFLICT DO NOTHING applied)", item.id);
             }
             Err(e) => {
                 log::error!(
                     "Error during SocialShoppingItem INSERT for item ID {}: {}. Rolling back.",
                     item.id, e
                 );
-                 if let Some(db_err) = e.as_database_error() {
-                     log::error!(
-                         "DB Error details: Constraint={:?}, Code={:?}",
-                         db_err.constraint(), db_err.code()
-                     );
-                 }
+                if let Some(db_err) = e.as_database_error() {
+                    log::error!("DB Error details: Constraint={:?}, Code={:?}", 
+                                db_err.constraint(), db_err.code());
+                }
+                tx.rollback().await?;
+                return Err(e);
+            }
+        }
+        
+        if let (Some(price), Some(ssi_db_id)) = (&item.display_price, internal_ssi_id) {
+            log::trace!("Attempting to insert price for internal_id {}", ssi_db_id);
+            let price_insert_result = sqlx::query!(
+                r#"
+                INSERT INTO "DisplayPrice" ( 
+                    "socialShoppingItemId", "amountInclusive", "amountExclusive", "currency" 
+                ) VALUES ( $1, $2, $3, $4 )
+                ON CONFLICT ("socialShoppingItemId") DO NOTHING
+                "#,
+                ssi_db_id,
+                price.amount_inclusive,
+                price.amount_exclusive,
+                price.currency
+            )
+            .execute(&mut *tx)
+            .await;
+
+            if let Err(e) = price_insert_result {
+                log::error!(
+                    "Error inserting DisplayPrice for internal_id {}: {}. Rolling back.",
+                    ssi_db_id, e
+                );
+                if let Some(db_err) = e.as_database_error() {
+                    log::error!("DB Error details: {:?}", db_err);
+                }
+                tx.rollback().await?;
                 return Err(e);
             }
         }
