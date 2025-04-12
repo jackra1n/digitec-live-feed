@@ -63,7 +63,9 @@ pub struct RawCityNameMap {
 
 #[derive(Debug, Clone, FromRow)]
 pub struct SocialShoppingItem {
-    pub id: i32,
+    pub id: i64,
+    #[sqlx(rename = "api_id")]
+    pub api_id: i64,
     #[sqlx(rename = "userName")]
     pub user_name: String,
     #[sqlx(rename = "cityName")]
@@ -99,7 +101,7 @@ pub struct SocialShoppingItem {
 pub struct DisplayPrice {
     pub id: i32,
     #[sqlx(rename = "socialShoppingItemId")]
-    pub social_shopping_item_id: i32,
+    pub social_shopping_item_id: i64,
     #[sqlx(rename = "amountInclusive")]
     pub amount_inclusive: Decimal,
     #[sqlx(rename = "amountExclusive")]

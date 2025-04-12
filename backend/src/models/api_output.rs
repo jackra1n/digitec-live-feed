@@ -6,7 +6,7 @@ use serde::Serialize;
 #[derive(Serialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct FeedItemResponse {
-    pub id: i32,
+    pub id: i64,
     pub user_name: String,
     pub city_name: Option<String>,
     pub canton: Option<String>,
